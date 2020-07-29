@@ -16,7 +16,7 @@ ${tweaks} = @(
 	"UISettings",
 	"WindowsExplorerSettings",
 	"ApplicationsSettings",
-	"PressAnyKeyToReboot",
+	"PressAnyKeyToReboot"
 )
 
 ### Programs settings ###
@@ -643,7 +643,7 @@ Function PressAnyKeyToReboot {
 
 ### Parse parameters and apply tweaks ###
 ${preset} = ""
-$${PSCommandArgs} = ${args}
+${PSCommandArgs} = ${args}
 If (${args} -And ${args}[0].ToLower() -eq "-preset") {
 	${preset} = Resolve-Path $(${args} | Select-Object -Skip 1)
 	${PSCommandArgs} = "-preset `"${preset}`""
