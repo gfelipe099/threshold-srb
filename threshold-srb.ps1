@@ -5,6 +5,23 @@
 # System Readiness for Business
 # For Microsoft Windows 10 64-bit
 #
+cls
+### Check for OS version ###
+if (!$validatedOsVersion) {
+    New-Variable -Name validatedOsVersion -Value "10.0.19041"
+}
+
+if (!$systemOsVersion) {
+    New-Variable -Name systemOsVersion -Value (gwmi win32_operatingsystem).version
+}
+
+Function CheckOSVersion {
+    if ( (gwmi win32_operatingsystem).version -ne "${validatedOsVersion}" ) {
+        Write-Output "The version v${systemOsVersion} is not supported yet."
+        Write-Host "Only the version v${validatedOsVersion} is compatible."
+        exit
+    }
+}
 
 # Default preset
 ${tweaks} = @(
@@ -18,6 +35,17 @@ ${tweaks} = @(
 	"ApplicationsSettings",
 	"PressAnyKeyToReboot"
 )
+
+### Startup ###
+Function Startup {
+    Write-Output "System Readiness for Business (Windows 10 v2004 or higher)"
+    Write-Output ""
+    Write-Output ""
+    Write-Output "PRESS ANY KEY TO EXECUTE THE SCRIPT..."
+	[Console]::ReadKey(${true}) | Out-Null
+    Write-Output ""
+    Write-Output ""
+}
 
 ### Programs settings ###
 Function ProgramsSetup {
@@ -35,22 +63,16 @@ Function ProgramsSetup {
 	
 	Write-Output ""
 	
-	Write-Output "Installing 7-Zip... "
+	Write-Output "Installing 7-Zip, Steam, Origin and Microsoft Edge... "
 	choco install 7zip.install -y
-	
-	Write-Output ""
-	
-	Write-Output "Installing Steam... "
 	choco install steam -y
-	
-	Write-Output ""
-	
-	Write-Output "Installing Origin... "
 	choco install origin -y
-	
+	choco install microsoft-edge -y
+
 	Write-Output ""
 
-	Write-Output "Uninstalling Windows UWP applications..."
+	Write-Output "Uninstalling all Windows UWP application. Please wait, will take a while..."
+    Start-Sleep 5
 	Get-AppxPackage -allusers | Remove-AppxPackage | Out-Null
 }
 
@@ -273,7 +295,7 @@ Function SecuritySettings {
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\NcdAutoSetup\Private" -Name "AutoSetup" -Type DWord -Value 0
 
-	Write-Output 
+	Write-Output ""
 
 	Write-Output "Disabling Controlled Folder Access..."
 	Set-MpPreference -EnableControlledFolderAccess Disabled
@@ -311,6 +333,7 @@ Function SecuritySettings {
 
 	Write-Output "Setting Data Execution Prevention (DEP) policy to OptIn ..."
 	bcdedit /set `{current`} nx OptIn | Out-Null
+	bcdedit /set `{current`} nx AlwaysOn | Out-Null
 
 	Write-Output ""
 
@@ -347,7 +370,7 @@ Function ServicesConfiguration {
 
 	Write-Output ""
 
-	Write-Output "Disabling driver offering through Windows Update..."
+	Write-Output "Disabling automatic driver installation through Windows Update..."
 	If (!(Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Device Metadata")) {
 		New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Device Metadata" -Force | Out-Null
 	}
@@ -518,6 +541,11 @@ Function UISettings {
 
 	Write-Output ""
 
+	Write-Output "Hiding Cortana button..."
+	Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowCortanaButton" -Type DWord -Value 0
+
+	Write-Output ""
+
 	Write-Output "Hiding People icon..."
 	If (!(Test-Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\People")) {
 		New-Item -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\People" | Out-Null
@@ -598,32 +626,145 @@ Function ApplicationsSettings {
 
 	Write-Output ""
 
-	Write-Output "Uninstalling Windows Media Player..."
+	Write-Output "Configuring Windows optional features..."
 	Disable-WindowsOptionalFeature -Online -FeatureName "WindowsMediaPlayer" -NoRestart -WarningAction SilentlyContinue | Out-Null
-
-	Write-Output ""
-
-	Write-Output "Uninstalling Internet Explorer..."
 	Disable-WindowsOptionalFeature -Online -FeatureName "Internet-Explorer-Optional-$env:PROCESSOR_ARCHITECTURE" -NoRestart -WarningAction SilentlyContinue | Out-Null
-
-	Write-Output ""
-	
-	Write-Output "Uninstalling Work Folders Client..."
 	Disable-WindowsOptionalFeature -Online -FeatureName "WorkFolders-Client" -NoRestart -WarningAction SilentlyContinue | Out-Null
-
-	Write-Output ""
-
-	Write-Output "Uninstalling Microsoft Print to PDF..."
 	Disable-WindowsOptionalFeature -Online -FeatureName "Printing-PrintToPDFServices-Features" -NoRestart -WarningAction SilentlyContinue | Out-Null
-
-	Write-Output ""
-
-	Write-Output "Uninstalling Microsoft XPS Document Writer..."
 	Disable-WindowsOptionalFeature -Online -FeatureName "Printing-XPSServices-Features" -NoRestart -WarningAction SilentlyContinue | Out-Null
-
+	Disable-WindowsOptionalFeature -Online -FeatureName "Printing-PrintToPDFServices-Features" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Printing-XPSServices-Features"
+	Disable-WindowsOptionalFeature -Online -FeatureName "SearchEngine-Client-Package" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "MSRDC-Infrastructure" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "TelnetClient" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "TFTP" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "TIFFIFilter" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Enable-WindowsOptionalFeature -Online -FeatureName "LegacyComponents" -All -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Enable-WindowsOptionalFeature -Online -FeatureName "DirectPlay" -All -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Printing-Foundation-Features" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Printing-Foundation-InternetPrinting-Client" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Printing-Foundation-LPDPrintService" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Printing-Foundation-LPRPortMonitor" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "SimpleTCP" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Enable-WindowsOptionalFeature -Online -FeatureName "MicrosoftWindowsPowerShellV2Root" -All -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Enable-WindowsOptionalFeature -Online -FeatureName "MicrosoftWindowsPowerShellV2" -All -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Windows-Identity-Foundation" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Client-ProjFS" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Enable-WindowsOptionalFeature -Online -FeatureName "NetFx3" -All -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "WCF-HTTP-Activation" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "WCF-NonHTTP-Activation" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-WebServerRole" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-WebServer" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-CommonHttpFeatures" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-HttpErrors" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-HttpRedirect" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-ApplicationDevelopment" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-NetFxExtensibility" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-NetFxExtensibility45" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-HealthAndDiagnostics" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-HttpLogging" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-LoggingLibraries" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-RequestMonitor" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-HttpTracing" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-Security" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-URLAuthorization" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-RequestFiltering" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-IPSecurity" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-Performance" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-HttpCompressionDynamic" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-WebServerManagementTools" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-ManagementScriptingTools" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-IIS6ManagementCompatibility" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-Metabase" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "WAS-WindowsActivationService" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "WAS-ProcessModel" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "WAS-NetFxEnvironment" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "WAS-ConfigurationAPI" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-HostableWebCore" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Enable-WindowsOptionalFeature -Online -FeatureName "WCF-Services45" -All -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "WCF-HTTP-Activation45" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "WCF-TCP-Activation45" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "WCF-Pipe-Activation45" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "WCF-MSMQ-Activation45" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Enable-WindowsOptionalFeature -Online -FeatureName "WCF-TCP-PortSharing45" -All -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-StaticContent" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-DefaultDocument" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "-DirectoryBrowsing" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-WebDAV" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-WebSockets" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-ApplicationInit" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-ASPNET" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-ASPNET45" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "-ASP" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-CGI" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-ISAPIExtensions" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-ISAPIFilter" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-ServerSideIncludes" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-CustomLogging" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-BasicAuthentication" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-HttpCompressionStatic" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-ManagementConsole" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-ManagementService" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-WMICompatibility" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-LegacyScripts" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-LegacySnapIn" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-FTPServer" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-FTPSvc" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-FTPExtensibility" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "MSMQ-Container" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "MSMQ-DCOMProxy" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "MSMQ-Server" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "-ADIntegration" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "MSMQ-HTTP" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "MSMQ-Multicast" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "-Triggers" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-CertProvider" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-WindowsAuthentication" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-DigestAuthentication" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-ClientCertificateMappingAuthentication" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-IISCertificateMappingAuthentication" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-ODBCLogging" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "NetFx4-AdvSrvs" -All -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "NetFx4Extended-ASPNET45" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "SMB1Protocol-Deprecation" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "DataCenterBridging" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "ServicesForNFS-ClientOnly" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "ClientForNFS-Infrastructure" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "NFS-Administration" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "SmbDirect" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "HostGuardian" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "MultiPoint-Connector" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "MultiPoint-Connector-Services" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "MultiPoint-Tools" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Enable-WindowsOptionalFeature -Online -FeatureName "Windows-Defender-Default-Definitions" -All
+	Disable-WindowsOptionalFeature -Online -FeatureName "WorkFolders-Client" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Microsoft-Windows-Subsystem-Linux" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "HypervisorPlatform" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "VirtualMachinePlatform" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Containers-DisposableClientVM" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Microsoft-Hyper-V-All" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Microsoft-Hyper-V" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Microsoft-Hyper-V-Tools-All" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Microsoft-Hyper-V-Management-PowerShell" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Microsoft-Hyper-V-Hypervisor" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Microsoft-Hyper-V-Services" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Microsoft-Hyper-V-Management-Clients" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Client-DeviceLockdown" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Client-EmbeddedShellLauncher" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Client-EmbeddedBootExp" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Client-EmbeddedLogon" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Client-KeyboardFilter" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Client-UnifiedWriteFilter" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "DirectoryServices-ADAM-Client" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Windows-Defender-ApplicationGuard" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "Containers" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "SMB1Protocol" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "SMB1Protocol-Client" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "SMB1Protocol-Server" -NoRestart -WarningAction SilentlyContinue | Out-Null
+	
 	Write-Output ""
 
-	Write-Output "Removing Default Fax Printer..."
+	Write-Output "Removing 'Fax' from default printers..."
 	Remove-Printer -Name "Fax" -ErrorAction SilentlyContinue
 }
 
@@ -638,7 +779,7 @@ Function RequireAdmin {
 Function PressAnyKeyToReboot {
 	Write-Output "System Readiness for Business has finished! Press any key to reboot your computer..."
 	[Console]::ReadKey(${true}) | Out-Null
-	Reboot-Computer
+    Restart-Computer
 }
 
 ### Parse parameters and apply tweaks ###
@@ -657,4 +798,6 @@ If (${args}) {
 }
 
 # Call the desired tweak functions
+Startup
+CheckOSVersion
 ${tweaks} | ForEach { Invoke-Expression $_ }
