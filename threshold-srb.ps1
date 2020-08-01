@@ -63,11 +63,11 @@ Function ProgramsSetup {
 	
 	Write-Output ""
 	
-	Write-Output "Installing 7-Zip, Steam, Origin and Microsoft Edge... "
+	Write-Output "Installing 7-Zip, Steam, Origin and Firefox ESR... "
 	choco install 7zip.install -y
 	choco install steam -y
 	choco install origin -y
-	choco install microsoft-edge -y
+	choco install firefoxesr -y
 
 	Write-Output ""
 
