@@ -7,3 +7,7 @@ System Readiness for Businesss is an automated privacy-focused configuration too
 * Script simplified
 * Server tweaks removed
 * And maybe more in the future
+
+## Download and execute
+Get started by opening PowerShell with administrator privileges and copy and paste the following command:
+> powershell -nop -c "iex(New-Object Net.WebClient).DownloadString('https://git.io/JJVqP')"
