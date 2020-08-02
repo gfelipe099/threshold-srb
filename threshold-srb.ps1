@@ -3,82 +3,112 @@
 # A fork from ChrisTitusTech's https://github.com/ChrisTitusTech/win10script
 # threshold-srb.sh file
 # System Readiness for Business
-# For Microsoft Windows 10 64-bit
+# For Microsoft Windows 10 Enterprise N LTSC 2019 x64
 #
-cls
-### Check for OS version ###
-if (!$validatedOsVersion) {
-    New-Variable -Name validatedOsVersion -Value "10.0.19041"
+Clear-Host
+###### MAIN FUNCTIONS ######
+
+### Check system version and edition ###
+if (!${validatedOsVersion}) {
+    New-Variable -Name validatedOsVersion -Value "10.0.17763" | Out-Null
 }
 
-if (!$systemOsVersion) {
-    New-Variable -Name systemOsVersion -Value (gwmi win32_operatingsystem).version
+if (!${validatedOsEdition}) {
+	New-Variable -Name validatedOsEdition -Value "Microsoft Windows 10 Enterprise N LTSC" | Out-Null
 }
 
-Function CheckOSVersion {
-    if ( (gwmi win32_operatingsystem).version -ne "${validatedOsVersion}" ) {
-        Write-Output "The version v${systemOsVersion} is not supported yet."
-        Write-Host "Only the version v${validatedOsVersion} is compatible."
+if (!${OsVersion}) {
+    New-Variable -Name OsVersion -Value (gwmi win32_operatingsystem).version | Out-Null
+}
+
+if (!${OsEdition}) {
+	New-Variable -Name OsEdition -Value (gwmi win32_operatingsystem).caption | Out-Null
+}
+
+Function CheckOs {
+    if (${OsEdition} -ne "${validatedOsEdition}") {
+        Write-Output ""
+        Write-Output "Sorry, the script won't execute."
+        Write-Output ""
+        Write-Output "The script was only made for: ${OsEdition},"
+        Write-Output "and you are using: ${validatedOsEdition}."
+        Write-Output ""
+        Write-Output "Closing script..."
+        Start-Sleep 20
         exit
+        if (${OsVersion} -ne "${validatedOsVersion}") {
+            Write-Output ""
+            Write-Output "Sorry, the script won't continue."
+            Write-Output ""
+            Write-Output "The version you currently use is: v${OsVersion}, which is not supported yet."
+            Write-Output "Only the version v${validatedOsVersion} is compatible."
+            Write-Output ""
+            Write-Output "Closing script..."
+            Start-Sleep 20
+            exit
+        }
     }
+    Startup
 }
 
-# Default preset
-${tweaks} = @(
-	"RequireAdmin",
+Function Startup {
+	Write-Output ""
+    Write-Output "System Readiness for Business"
+    Write-Output ""
+    Write-Output ""
+    Write-Output "Starting script..."
+    Start-Sleep 5
+    RequireAdmin
+}
+
+## Presets ##
+${Full} = @(
 	"ProgramsSetup",
-	"PrivacySettings",
-	"SecuritySettings",
+    "PrivacySettings",
+    "SecuritySettings",
 	"ServicesSettings",
 	"UISettings",
-	"WindowsExplorerSettings",
+    "WindowsExplorerSettings",
 	"ApplicationsSettings",
-	"PressAnyKeyToReboot"
-)
+	"Reboot"
+    )
 
-### Startup ###
-Function Startup {
-    Write-Output "System Readiness for Business (Windows 10 v2004 or higher)"
-    Write-Output ""
-    Write-Output ""
-    Write-Output "PRESS ANY KEY TO EXECUTE THE SCRIPT..."
-	[Console]::ReadKey(${true}) | Out-Null
-    Write-Output ""
-    Write-Output ""
+Function RequireAdmin {
+	If (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")) {
+		Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"${PSCommandPath}`" $${PSCommandArgs}" -WorkingDirectory ${pwd} -Verb RunAs
+		Exit
+	}
 }
+
+Function Reboot {
+	Write-Output "System Readiness for Business has finished! Press any key to reboot your computer..."
+	[Console]::ReadKey(${true}) | Out-Null
+	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\PowerShell\1\ShellIds\Microsoft.PowerShell" -Name "ExecutionPolicy" -Type String -Value "Restricted"
+    Restart-Computer
+}
+
+###### MAIN FUNCTIONS ######
 
 ### Programs settings ###
 Function ProgramsSetup {
-	Write-Output "Installing Chocolatey... "
-	Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-	choco install chocolatey-core.extension -y
-	
-	Write-Output ""
-	
-	Write-Output "Running O&O ShutUp10 with privacy-hardened settings..."
+	Write-Output "Installing and configuring programs... "
+	Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')) | Out-Null
+	choco install chocolatey-core.extension -y | Out-Null
 	Import-Module BitsTransfer
-	Start-BitsTransfer -Source "https://raw.githubusercontent.com/gfelipe099/threshold-readiness/master/ooshutup10.cfg" -Destination ooshutup10.cfg
-	Start-BitsTransfer -Source "https://dl5.oo-software.com/files/ooshutup10/OOSU10.exe" -Destination OOSU10.exe
+	Start-BitsTransfer -Source "https://raw.githubusercontent.com/gfelipe099/threshold-readiness/master/ooshutup10.cfg" -Destination ooshutup10.cfg | Out-Null
+	Start-BitsTransfer -Source "https://dl5.oo-software.com/files/ooshutup10/OOSU10.exe" -Destination OOSU10.exe | Out-Null
 	./OOSU10.exe ooshutup10.cfg /quiet
-	
-	Write-Output ""
-	
-	Write-Output "Installing 7-Zip, Steam, Origin and Firefox ESR... "
-	choco install 7zip.install -y
-	choco install steam -y
-	choco install origin -y
-	choco install firefoxesr -y
-
-	Write-Output ""
-
-	Write-Output "Uninstalling all Windows UWP application. Please wait, will take a while..."
-    Start-Sleep 5
+    Remove-Module BitsTransfer
+	choco install 7zip.install -y | Out-Null
+	choco install steam -y | Out-Null
+	choco install origin -y | Out-Null
+	choco install firefoxesr -y | Out-Null
 	Get-AppxPackage -allusers | Remove-AppxPackage | Out-Null
 }
 
 ### Privacy settings ###
 Function PrivacySettings {
-	Write-Output "Disabling Telemetry..."
+	Write-Output "COnfigurin privacy settings..."
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection" -Name "AllowTelemetry" -Type DWord -Value 0
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Policies\DataCollection" -Name "AllowTelemetry" -Type DWord -Value 0
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name "AllowTelemetry" -Type DWord -Value 0
@@ -88,10 +118,6 @@ Function PrivacySettings {
 	Disable-ScheduledTask -TaskName "Microsoft\Windows\Customer Experience Improvement Program\Consolidator" | Out-Null
 	Disable-ScheduledTask -TaskName "Microsoft\Windows\Customer Experience Improvement Program\UsbCeip" | Out-Null
 	Disable-ScheduledTask -TaskName "Microsoft\Windows\DiskDiagnostic\Microsoft-Windows-DiskDiagnosticDataCollector" | Out-Null
-	
-	Write-Output ""
-
-	Write-Output "Disabling Wi-Fi Sense..."
 	If (!(Test-Path "HKLM:\SOFTWARE\Microsoft\PolicyManager\default\WiFi\AllowWiFiHotSpotReporting")) {
 		New-Item -Path "HKLM:\SOFTWARE\Microsoft\PolicyManager\default\WiFi\AllowWiFiHotSpotReporting" -Force | Out-Null
 	}
@@ -102,26 +128,15 @@ Function PrivacySettings {
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\config" -Name "AutoConnectAllowedOEM" -Type Dword -Value 0
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\config" -Name "WiFISenseAllowed" -Type Dword -Value 0
-	
-	Write-Output ""
-	
 	Write-Output "Enabling SmartScreen Filter..."
 	Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "EnableSmartScreen" -ErrorAction SilentlyContinue
 	Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\MicrosoftEdge\PhishingFilter" -Name "EnabledV9" -ErrorAction SilentlyContinue
-	
-	Write-Output ""
-	
-	Write-Output "Disabling Bing Search in Start Menu..."
 	Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "BingSearchEnabled" -Type DWord -Value 0
 	Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "CortanaConsent" -Type DWord -Value 0
 	If (!(Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search")) {
 		New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Force | Out-Null
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "DisableWebSearch" -Type DWord -Value 1
-
-	Write-Output ""
-
-	Write-Output "Disabling Application suggestions..."
 	Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "ContentDeliveryAllowed" -Type DWord -Value 0
 	Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "OemPreInstalledAppsEnabled" -Type DWord -Value 0
 	Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "PreInstalledAppsEnabled" -Type DWord -Value 0
@@ -136,40 +151,20 @@ Function PrivacySettings {
 		New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Force | Out-Null
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Name "DisableWindowsConsumerFeatures" -Type DWord -Value 1
-
-	Write-Output ""
-
-	Write-Output "Disabling activity history..."
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "EnableActivityFeed" -Type DWord -Value 0
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "PublishUserActivities" -Type DWord -Value 0
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "UploadUserActivities" -Type DWord -Value 0
-
-	Write-Output ""
-
-	Write-Output "Disabling background application access..."
 	Get-ChildItem -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications" -Exclude "Microsoft.Windows.Cortana*" | ForEach {
 		Set-ItemProperty -Path $_.PsPath -Name "Disabled" -Type DWord -Value 1
 		Set-ItemProperty -Path $_.PsPath -Name "DisabledByUser" -Type DWord -Value 1
 	}
-
-	Write-Output ""
-
-	Write-Output "Disabling location tracking..."
 	If (!(Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location")) {
 		New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location" -Force | Out-Null
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location" -Name "Value" -Type String -Value "Deny"
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Sensor\Overrides\{BFA794E4-F964-4FDB-90F6-51056BFE4B44}" -Name "SensorPermissionState" -Type DWord -Value 0
 	Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\lfsvc\Service\Configuration" -Name "Status" -Type DWord -Value 0
-
-	Write-Output ""
-
-	Write-Output "Disabling automatic Maps updates..."
 	Set-ItemProperty -Path "HKLM:\SYSTEM\Maps" -Name "AutoUpdateEnabled" -Type DWord -Value 0
-
-	Write-Output ""
-
-	Write-Output "Disabling Feedback..."
 	If (!(Test-Path "HKCU:\SOFTWARE\Microsoft\Siuf\Rules")) {
 		New-Item -Path "HKCU:\SOFTWARE\Microsoft\Siuf\Rules" -Force | Out-Null
 	}
@@ -177,26 +172,14 @@ Function PrivacySettings {
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name "DoNotShowFeedbackNotifications" -Type DWord -Value 1
 	Disable-ScheduledTask -TaskName "Microsoft\Windows\Feedback\Siuf\DmClient" -ErrorAction SilentlyContinue | Out-Null
 	Disable-ScheduledTask -TaskName "Microsoft\Windows\Feedback\Siuf\DmClientOnScenarioDownload" -ErrorAction SilentlyContinue | Out-Null
-
-	Write-Output ""
-
-	Write-Output "Disabling tailored experiences..."
 	If (!(Test-Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\CloudContent")) {
 		New-Item -Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Force | Out-Null
 	}
 	Set-ItemProperty -Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Name "DisableTailoredExperiencesWithDiagnosticData" -Type DWord -Value 1
-
-	Write-Output ""
-
-	Write-Output "Disabling advertising ID..."
 	If (!(Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo")) {
 		New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo" | Out-Null
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo" -Name "DisabledByGroupPolicy" -Type DWord -Value 1
-
-	Write-Output ""
-
-	Write-Output "Disabling Cortana..."
 	If (!(Test-Path "HKCU:\SOFTWARE\Microsoft\Personalization\Settings")) {
 		New-Item -Path "HKCU:\SOFTWARE\Microsoft\Personalization\Settings" -Force | Out-Null
 	}
@@ -214,149 +197,65 @@ Function PrivacySettings {
 		New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Force | Out-Null
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "AllowCortana" -Type DWord -Value 0
-
-	Write-Output ""
-
-	Write-Output "Disabling error reporting ... "
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting" -Name "Disabled" -Type DWord -Value 1
 	Disable-ScheduledTask -TaskName "Microsoft\Windows\Windows Error Reporting\QueueReporting" | Out-Null
-
-	Write-Output ""
-
-	Write-Output "Restricting Windows Update P2P only to local network ... "
 	If (!(Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config")) {
 		New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config" | Out-Null
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config" -Name "DODownloadMode" -Type DWord -Value 1
-
-	Write-Output ""
-
-	Write-Output "Stopping and disabling Diagnostics Tracking Service..."
 	Stop-Service "DiagTrack" -WarningAction SilentlyContinue
 	Set-Service "DiagTrack" -StartupType Disabled
-
-	Write-Output ""
-
-	Write-Output "Stopping and disabling WAP Push Service..."
 	Stop-Service "dmwappushservice" -WarningAction SilentlyContinue
 	Set-Service "dmwappushservice" -StartupType Disabled
 }
 
 ### Security settings ###
 Function SecuritySettings {
-	Write-Output "Raising UAC level..."
-	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ConsentPromptBehaviorAdmin" -Type DWord -Value 5
+	Write-Output "Hardening security parameters..."
+	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ConsentPromptBehaviorAdmin" -Type DWord -Value 2
+	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ConsentPromptBehaviorUser" -Type DWord -Value 2
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "PromptOnSecureDesktop" -Type DWord -Value 1
-
-	Write-Output ""
-
-	Write-Output "Disabling sharing mapped drives between users..."
 	Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableLinkedConnections" -ErrorAction SilentlyContinue
-
-	Write-Output ""
-
-	Write-Output "Disabling implicit administrative shares..."
 	Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" -Name "AutoShareWks" -Type DWord -Value 0
-
-	Write-Output ""
-
-	Write-Output "Disabling SMB 1.0 protocol..."
-	Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force
-
-	Write-Output ""
-
-	Write-Output "Disabling SMB Server..."
 	Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force
 	Set-SmbServerConfiguration -EnableSMB2Protocol $false -Force
-
-	Write-Output ""
-
-	Write-Output "Disabling Link-Local Multicast Name Resolution (LLMNR) protocol..."
 	If (!(Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient")) {
 		New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient" -Force | Out-Null
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient" -Name "EnableMulticast" -Type DWord -Value 0
-
-	Write-Output ""
-
-	Write-Output "Setting current network profile to public..."
 	Set-NetConnectionProfile -NetworkCategory Public
-
-	Write-Output ""
-
-	Write-Output "Setting unknown networks profile to public..."
 	Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\CurrentVersion\NetworkList\Signatures\010103000F0000F0010000000F0000F0C967A3643C3AD745950DA7859209176EF5B87C875FA20DF21951640E807D7C24" -Name "Category" -ErrorAction SilentlyContinue
-
-	Write-Output ""
-
-	Write-Output "Disabling automatic installation of network devices..."
 	If (!(Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\NcdAutoSetup\Private")) {
 		New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\NcdAutoSetup\Private" -Force | Out-Null
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\NcdAutoSetup\Private" -Name "AutoSetup" -Type DWord -Value 0
-
-	Write-Output ""
-
-	Write-Output "Disabling Controlled Folder Access..."
 	Set-MpPreference -EnableControlledFolderAccess Disabled
-
-	Write-Output ""
-
-	Write-Output "Enabling Firewall..."
 	Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\WindowsFirewall\StandardProfile" -Name "EnableFirewall" -ErrorAction SilentlyContinue
-
-	Write-Output ""
-
-	Write-Output "Enabling Windows Defender..."
 	Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender" -Name "DisableAntiSpyware" -ErrorAction SilentlyContinue
 	If ([System.Environment]::OSVersion.Version.Build -eq 14393) {
 		Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "WindowsDefender" -Type ExpandString -Value "`"%ProgramFiles%\Windows Defender\MSASCuiL.exe`""
 	} ElseIf ([System.Environment]::OSVersion.Version.Build -ge 15063) {
 		Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "SecurityHealth" -Type ExpandString -Value "`"%ProgramFiles%\Windows Defender\MSASCuiL.exe`""
 	}
-
-	Write-Output ""
-
-	Write-Output "Disabling Windows Defender Cloud ... "
 	If (!(Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet")) {
 		New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet" -Force | Out-Null
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet" -Name "SpynetReporting" -Type DWord -Value 0
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet" -Name "SubmitSamplesConsent" -Type DWord -Value 2
-
-	Write-Output ""
-
-	Write-Output "Disabling F8 legacy boot menu options ... "
 	bcdedit /set `{current`} bootmenupolicy Standard | Out-Null
-
-	Write-Output ""
-
-	Write-Output "Setting Data Execution Prevention (DEP) policy to OptIn ..."
 	bcdedit /set `{current`} nx OptIn | Out-Null
 	bcdedit /set `{current`} nx AlwaysOn | Out-Null
-
-	Write-Output ""
-
-	Write-Output "Enabling Core Isolation Memory Integrity..."
 	If (!(Test-Path "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity")) {
 		New-Item -Path "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity" -Force | Out-Null
 	}
 	Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity" -Name "Enabled" -Type DWord -Value 1
-
-	Write-Output ""
-
-	Write-Output "Disabling Windows Script Host..."
+	If (!(Test-Path "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\CredentialGuard")) {
+		New-Item -Path "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\CredentialGuard" -Force | Out-Null
+	}
+	Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\CredentialGuard" -Name "Enabled" -Type DWord -Value 1
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows Script Host\Settings" -Name "Enabled" -Type DWord -Value 0
-
-	Write-Output ""
-
-	Write-output "Enabling .NET strong cryptography..."
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\.NETFramework\v4.0.30319" -Name "SchUseStrongCrypto" -Type DWord -Value 1
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432Node\Microsoft\.NETFramework\v4.0.30319" -Name "SchUseStrongCrypto" -Type DWord -Value 1
-
-	Write-Output ""
-
-	Write-Output "Enabling Meltdown (CVE-2017-5754) compatibility flag..."
 	If (!(Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\QualityCompat")) {
 		New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\QualityCompat" | Out-Null
 	}
@@ -364,13 +263,9 @@ Function SecuritySettings {
 }
 
 ### Services settings ###
-Function ServicesConfiguration {
-	Write-Output "Enabling Malicious Software Removal Tool offering..."
+Function ServicesSettings{
+	Write-Output "Configuring services..."
 	Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\MRT" -Name "DontOfferThroughWUAU" -ErrorAction SilentlyContinue
-
-	Write-Output ""
-
-	Write-Output "Disabling automatic driver installation through Windows Update..."
 	If (!(Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Device Metadata")) {
 		New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Device Metadata" -Force | Out-Null
 	}
@@ -385,55 +280,23 @@ Function ServicesConfiguration {
 		New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" | Out-Null
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" -Name "ExcludeWUDriversInQualityUpdate" -Type DWord -Value 1
-
-	Write-Output ""
-
-	Write-Output "Disabling Windows Update automatic restart..."
 	If (!(Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU")) {
 		New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Force | Out-Null
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "NoAutoRebootWithLoggedOnUsers" -Type DWord -Value 1
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "AUPowerManagement" -Type DWord -Value 0
-
-	Write-Output ""
-
-	Write-Output "Stopping and disabling Home Groups services..."
 	Stop-Service "HomeGroupListener" -WarningAction SilentlyContinue
 	Set-Service "HomeGroupListener" -StartupType Disabled
 	Stop-Service "HomeGroupProvider" -WarningAction SilentlyContinue
 	Set-Service "HomeGroupProvider" -StartupType Disabled
-
-	Write-Output ""
-
-	Write-Output "Disabling Shared Experiences..."
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "EnableCdp" -Type DWord -Value 0
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "EnableMmx" -Type DWord -Value 0
-
-	Write-Output ""
-
-	Write-Output "Disabling Remote Assistance..."
 	Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance" -Name "fAllowToGetHelp" -Type DWord -Value 0
-
-	Write-Output ""
-
-	Write-Output "Disabling Remote Desktop..."
 	Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Type DWord -Value 1
 	Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name "UserAuthentication" -Type DWord -Value 1
 	Disable-NetFirewallRule -Name "RemoteDesktop*"
-
-	Write-Output ""
-
-	Write-Output "Enabling Autoplay..."
 	Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\AutoplayHandlers" -Name "DisableAutoplay" -Type DWord -Value 0
-
-	Write-Output ""
-
-	Write-Output "Enabling Autorun for all drives..."
 	Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "NoDriveTypeAutoRun" -ErrorAction SilentlyContinue
-
-	Write-Output ""
-
-	Write-Output "Enabling Storage Sense..."
 	If (!(Test-Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\StorageSense\Parameters\StoragePolicy")) {
 		New-Item -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\StorageSense\Parameters\StoragePolicy" -Force | Out-Null
 	}
@@ -442,138 +305,58 @@ Function ServicesConfiguration {
 	Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\StorageSense\Parameters\StoragePolicy" -Name "08" -Type DWord -Value 1
 	Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\StorageSense\Parameters\StoragePolicy" -Name "32" -Type DWord -Value 0
 	Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\StorageSense\Parameters\StoragePolicy" -Name "StoragePoliciesNotified" -Type DWord -Value 1
-
-	Write-Output ""
-
-	Write-Output "Disabling scheduled defragmentation..."
 	Disable-ScheduledTask -TaskName "Microsoft\Windows\Defrag\ScheduledDefrag" | Out-Null
-
-	Write-Output ""
-
-	Write-Output "Stopping and disabling Superfetch service..."
 	Stop-Service "SysMain" -WarningAction SilentlyContinue
 	Set-Service "SysMain" -StartupType Disabled
-
-	Write-Output ""
-	
-	Write-Output "Stopping and disabling Windows Search indexing service..."
 	Stop-Service "WSearch" -WarningAction SilentlyContinue
 	Set-Service "WSearch" -StartupType Disabled
-
-	Write-Output ""
-
-	Write-Output "Setting BIOS time to local time..."
 	Remove-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\TimeZoneInformation" -Name "RealTimeIsUniversal" -ErrorAction SilentlyContinue
-
-	Write-Output ""
-
-	Write-Output "Disabling Hibernation..."
 	Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Session Manager\Power" -Name "HibernteEnabled" -Type Dword -Value 0
 	If (!(Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FlyoutMenuSettings")) {
 		New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FlyoutMenuSettings" | Out-Null
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FlyoutMenuSettings" -Name "ShowHibernateOption" -Type Dword -Value 0
-
-	Write-Output ""
-
-	Write-Output "Disabling Sleep start menu and keyboard button..."
 	If (!(Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FlyoutMenuSettings")) {
 		New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FlyoutMenuSettings" | Out-Null
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FlyoutMenuSettings" -Name "ShowSleepOption" -Type Dword -Value 0
 	powercfg /SETACVALUEINDEX SCHEME_CURRENT SUB_BUTTONS SBUTTONACTION 0
 	powercfg /SETDCVALUEINDEX SCHEME_CURRENT SUB_BUTTONS SBUTTONACTION 0
-
-	Write-Output ""
-
-	Write-Output "Disabling display and sleep mode timeouts..."
 	powercfg /X monitor-timeout-ac 0
 	powercfg /X monitor-timeout-dc 0
 	powercfg /X standby-timeout-ac 0
 	powercfg /X standby-timeout-dc 0
-
-	Write-Output ""
-
-	Write-Output "Disabling Fast Startup..."
 	Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -Type DWord -Value 0
 }
 
 ### UI settings ###
 Function UISettings {
-	Write-Output "Hiding network options from Lock Screen..."
-	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "DontDisplayNetworkSelectionUI" -Type DWord -Value 1
-
-	Write-Output ""
-
-	Write-Output "Hiding shutdown options from Lock Screen..."
+	Write-Output "Securing UI parameters..."
+	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "DontDisplayNetworkSelectionUI" -Type DWord -Value 
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ShutdownWithoutLogon" -Type DWord -Value 0
-
-	Write-Output ""
-
-	Write-Output "Disabling Sticky keys prompt..."
 	Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\StickyKeys" -Name "Flags" -Type String -Value "506"
-
-	Write-Output ""
-	
-	Write-Output "Showing file operations details..."
 	If (!(Test-Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\OperationStatusManager")) {
 		New-Item -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\OperationStatusManager" | Out-Null
 	}
 	Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\OperationStatusManager" -Name "EnthusiastMode" -Type DWord -Value 1
-
-	Write-Output ""
-
-	Write-Output "Enabling file delete confirmation dialog..."
 	If (!(Test-Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer")) {
 		New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" | Out-Null
 	}
 	Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "ConfirmFileDelete" -Type DWord -Value 1
-
-	Write-Output ""
-
-	Write-Output "Hiding Taskbar Search icon / box..."
 	Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -Type DWord -Value 0
-
-	Write-Output ""
-
-	Write-Output "Hiding Task View button..."
 	Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -Type DWord -Value 0
-
-	Write-Output ""
-
-	Write-Output "Hiding Cortana button..."
 	Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowCortanaButton" -Type DWord -Value 0
-
-	Write-Output ""
-
-	Write-Output "Hiding People icon..."
 	If (!(Test-Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\People")) {
 		New-Item -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\People" | Out-Null
 	}
 	Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\People" -Name "PeopleBand" -Type DWord -Value 0
-
-	Write-Output ""
-
-	Write-Output "Showing all tray icons..."
 	Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" -Name "EnableAutoTray" -Type DWord -Value 0
-
-	Write-Output ""
-
-	Write-Output "Disabling search for app in store for unknown extensions..."
 	If (!(Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer")) {
 		New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" | Out-Null
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -Name "NoUseStoreOpenWith" -Type DWord -Value 1
-
-	Write-Output ""
-
-	Write-Output "Setting Control Panel view to categories..."
 	Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\ControlPanel" -Name "StartupPage" -ErrorAction SilentlyContinue
 	Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\ControlPanel" -Name "AllItemsIconView" -ErrorAction SilentlyContinue
-
-	Write-Output ""
-
-	Write-Output "Adjusting visual effects for performance..."
 	Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "DragFullWindows" -Type String -Value 0
 	Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "MenuShowDelay" -Type String -Value 0
 	Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "UserPreferencesMask" -Type Binary -Value ([byte[]](144,18,3,128,16,0,0,0))
@@ -588,33 +371,21 @@ Function UISettings {
 
 ### Windows Explorer settings ###
 Function WindowsExplorerSettings {
-	Write-Output "Showing known file extensions..."
+	Write-Output "Configuring Windows explorer settings..."
 	Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HideFileExt" -Type DWord -Value 0
-
-	Write-Output ""
-
-	Write-Output "Disabling thumbnails..."
 	Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "IconsOnly" -Type DWord -Value 1
-
-	Write-Output ""
-
-	Write-Output "Disabling thumbails cache..."
 	Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "DisableThumbnailCache" -Type DWord -Value 1
 	Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "DisableThumbsDBOnNetworkFolders" -Type DWord -Value 1
 }
 
 ### Application settings ###
 Function ApplicationsSettings {
-	Write-Output "Disabling Xbox features..."
+	Write-Output "Setting up applications parameters..."
 	Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_Enabled" -Type DWord -Value 0
 	If (!(Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR")) {
 		New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR" | Out-Null
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR" -Name "AllowGameDVR" -Type DWord -Value 0
-
-	Write-Output ""
-
-	Write-Output "Disabling built-in Adobe Flash in IE and Edge..."
 	If (!(Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Internet Explorer")) {
 		New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Internet Explorer" -Force | Out-Null
 	}
@@ -623,9 +394,6 @@ Function ApplicationsSettings {
 		New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\MicrosoftEdge\Addons" -Force | Out-Null
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\MicrosoftEdge\Addons" -Name "FlashPlayerEnabled" -Type DWord -Value 0
-
-	Write-Output ""
-
 	Write-Output "Configuring Windows optional features..."
 	Disable-WindowsOptionalFeature -Online -FeatureName "WindowsMediaPlayer" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "Internet-Explorer-Optional-$env:PROCESSOR_ARCHITECTURE" -NoRestart -WarningAction SilentlyContinue | Out-Null
@@ -651,6 +419,7 @@ Function ApplicationsSettings {
 	Disable-WindowsOptionalFeature -Online -FeatureName "Windows-Identity-Foundation" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "Client-ProjFS" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Enable-WindowsOptionalFeature -Online -FeatureName "NetFx3" -All -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Enable-WindowsOptionalFeature -Online -FeatureName "NetFx4-Advsrvs" -All -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "WCF-HTTP-Activation" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "WCF-NonHTTP-Activation" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-WebServerRole" -NoRestart -WarningAction SilentlyContinue | Out-Null
@@ -724,7 +493,7 @@ Function ApplicationsSettings {
 	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-ClientCertificateMappingAuthentication" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-IISCertificateMappingAuthentication" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-ODBCLogging" -NoRestart -WarningAction SilentlyContinue | Out-Null
-	Disable-WindowsOptionalFeature -Online -FeatureName "NetFx4-AdvSrvs" -All -NoRestart -WarningAction SilentlyContinue | Out-Null
+	Disable-WindowsOptionalFeature -Online -FeatureName "NetFx4-AdvSrvs" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "NetFx4Extended-ASPNET45" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "SMB1Protocol-Deprecation" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "DataCenterBridging" -NoRestart -WarningAction SilentlyContinue | Out-Null
@@ -761,28 +530,333 @@ Function ApplicationsSettings {
 	Disable-WindowsOptionalFeature -Online -FeatureName "SMB1Protocol" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "SMB1Protocol-Client" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "SMB1Protocol-Server" -NoRestart -WarningAction SilentlyContinue | Out-Null
-	
-	Write-Output ""
-
-	Write-Output "Removing 'Fax' from default printers..."
-	Remove-Printer -Name "Fax" -ErrorAction SilentlyContinue
+	DISM /Online /Remove-Capability /CapabilityName:Accessibility.Braille~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Analog.Holographic.Desktop~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:App.Support.QuickAssist~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Browser.InternetExplorer~~~~0.0.11.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Hello.Face.17658~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Hello.Face.Migration.17658~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~af-ZA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~ar-SA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~as-IN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~az-LATN-AZ~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~ba-RU~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~be-BY~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~bg-BG~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~bn-BD~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~bn-IN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~bs-LATN-BA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~ca-ES~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~cs-CZ~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~cy-GB~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~da-DK~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~de-DE~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~el-GR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~en-GB~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~es-ES~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~es-MX~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~et-EE~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~eu-ES~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~fa-IR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~fi-FI~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~fil-PH~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~fr-CA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~fr-FR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~ga-IE~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~gd-GB~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~gl-ES~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~gu-IN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~ha-LATN-NG~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~haw-US~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~he-IL~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~hi-IN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~hr-HR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~hu-HU~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~hy-AM~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~id-ID~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~ig-NG~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~is-IS~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~it-IT~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~ja-JP~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~ka-GE~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~kk-KZ~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~kl-GL~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~kn-IN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~ko-KR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~kok-DEVA-IN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~ky-KG~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~lb-LU~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~lt-LT~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~lv-LV~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~mi-NZ~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~mk-MK~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~ml-IN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~mn-MN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~mr-IN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~ms-BN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~ms-MY~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~mt-MT~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~nb-NO~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~ne-NP~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~nl-NL~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~nn-NO~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~nso-ZA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~or-IN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~pa-IN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~pl-PL~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~ps-AF~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~pt-BR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~pt-PT~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~rm-CH~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~ro-RO~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~ru-RU~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~rw-RW~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~sah-RU~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~si-LK~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~sk-SK~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~sl-SI~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~sq-AL~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~sr-CYRL-RS~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~sr-LATN-RS~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~sv-SE~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~sw-KE~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~ta-IN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~te-IN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~tg-CYRL-TJ~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~th-TH~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~tk-TM~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~tn-ZA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~tr-TR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~tt-RU~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~ug-CN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~uk-UA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~ur-PK~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~uz-LATN-UZ~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~vi-VN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~wo-SN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~xh-ZA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~yo-NG~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~zh-CN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~zh-HK~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~zh-TW~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Basic~~~zu-ZA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Arab~~~und-ARAB~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Beng~~~und-BENG~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Cans~~~und-CANS~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Cher~~~und-CHER~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Deva~~~und-DEVA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Ethi~~~und-ETHI~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Gujr~~~und-GUJR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Guru~~~und-GURU~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Hans~~~und-HANS~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Hant~~~und-HANT~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Hebr~~~und-HEBR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Jpan~~~und-JPAN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Khmr~~~und-KHMR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Knda~~~und-KNDA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Kore~~~und-KORE~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Laoo~~~und-LAOO~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Mlym~~~und-MLYM~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Orya~~~und-ORYA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.PanEuropeanSupplementalFonts~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Sinh~~~und-SINH~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Syrc~~~und-SYRC~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Taml~~~und-TAML~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Telu~~~und-TELU~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Fonts.Thai~~~und-THAI~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~af-ZA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~bs-LATN-BA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~ca-ES~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~cs-CZ~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~cy-GB~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~da-DK~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~de-DE~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~el-GR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~en-GB~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~es-ES~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~es-MX~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~eu-ES~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~fi-FI~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~fr-FR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~ga-IE~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~gd-GB~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~gl-ES~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~hi-IN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~hr-HR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~id-ID~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~it-IT~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~ja-JP~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~ko-KR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~lb-LU~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~mi-NZ~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~ms-BN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~ms-MY~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~nb-NO~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~nl-NL~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~nn-NO~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~nso-ZA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~pl-PL~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~pt-BR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~pt-PT~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~rm-CH~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~ro-RO~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~ru-RU~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~rw-RW~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~sk-SK~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~sl-SI~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~sq-AL~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~sr-CYRL-RS~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~sr-LATN-RS~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~sv-SE~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~sw-KE~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~tn-ZA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~tr-TR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~wo-SN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~xh-ZA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~zh-CN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~zh-HK~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~zh-TW~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Handwriting~~~zu-ZA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~ar-SA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~bg-BG~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~bs-LATN-BA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~cs-CZ~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~da-DK~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~de-DE~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~el-GR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~en-GB~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~es-ES~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~es-MX~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~fi-FI~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~fr-CA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~fr-FR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~hr-HR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~hu-HU~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~it-IT~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~ja-JP~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~ko-KR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~nb-NO~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~nl-NL~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~pl-PL~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~pt-BR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~pt-PT~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~ro-RO~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~ru-RU~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~sk-SK~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~sl-SI~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~sr-CYRL-RS~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~sr-LATN-RS~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~sv-SE~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~tr-TR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~zh-CN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~zh-HK~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.OCR~~~zh-TW~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Speech~~~de-DE~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Speech~~~en-AU~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Speech~~~en-CA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Speech~~~en-GB~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Speech~~~en-IN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Speech~~~es-ES~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Speech~~~es-MX~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Speech~~~fr-CA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Speech~~~fr-FR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Speech~~~it-IT~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Speech~~~ja-JP~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Speech~~~pt-BR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Speech~~~zh-CN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Speech~~~zh-HK~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.Speech~~~zh-TW~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~ar-EG~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~ar-SA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~bg-BG~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~ca-ES~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~cs-CZ~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~da-DK~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~de-AT~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~de-CH~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~de-DE~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~el-GR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~en-AU~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~en-CA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~en-GB~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~en-IE~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~en-IN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~es-ES~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~es-MX~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~fi-FI~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~fr-CA~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~fr-CH~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~fr-FR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~he-IL~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~hi-IN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~hr-HR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~hu-HU~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~id-ID~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~it-IT~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~ja-JP~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~ko-KR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~ms-MY~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~nb-NO~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~nl-BE~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~nl-NL~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~pl-PL~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~pt-BR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~pt-PT~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~ro-RO~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~ru-RU~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~sk-SK~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~sl-SI~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~sv-SE~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~ta-IN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~th-TH~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~tr-TR~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~vi-VN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~zh-CN~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~zh-HK~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Language.TextToSpeech~~~zh-TW~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:MathRecognizer~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Media.WindowsMediaPlayer~~~~0.0.12.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Microsoft.Onecore.StorageManagement~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Microsoft.WebDriver~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Microsoft.Windows.StorageManagement~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Msix.PackagingTool.Driver~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Add-Capability /CapabilityName:NetFX3~~~~ /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:OneCoreUAP.OneSync~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:OpenSSH.Client~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:OpenSSH.Server~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:RasCMAK.Client~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:RIP.Listener~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.BitLocker.Recovery.Tools~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.CertificateServices.Tools~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.DHCP.Tools~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.Dns.Tools~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.FailoverCluster.Management.Tools~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.FileServices.Tools~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.IPAM.Client.Tools~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.LLDP.Tools~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.NetworkController.Tools~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.NetworkLoadBalancing.Tools~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.RemoteAccess.Management.Tools~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.RemoteDesktop.Services.Tools~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.ServerManager.Tools~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.Shielded.VM.Tools~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.StorageMigrationService.Management.Tools~~~~0.0.1 /NoRestart /Quiet.0
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.StorageReplica.Tools~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.SystemInsights.Management.Tools~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.VolumeActivation.Tools~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.WSUS.Tools~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:SNMP.Client~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Tools.DeveloperMode.Core~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Tools.DTrace.Platform~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:Tools.Graphics.DirectX~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:WMI-SNMP-Provider.Client~~~~0.0.1.0 /NoRestart /Quiet
+	DISM /Online /Remove-Capability /CapabilityName:XPS.Viewer~~~~0.0.1.0 /NoRestart /Quiet
+	Remove-Printer -Name "Fax" -ErrorAction SilentlyContinue | Out-Null
 }
 
-### Auxiliary Functions ###
-Function RequireAdmin {
-	If (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")) {
-		Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"${PSCommandPath}`" $${PSCommandArgs}" -WorkingDirectory ${pwd} -Verb RunAs
-		Exit
-	}
-}
-
-Function PressAnyKeyToReboot {
-	Write-Output "System Readiness for Business has finished! Press any key to reboot your computer..."
-	[Console]::ReadKey(${true}) | Out-Null
-    Restart-Computer
-}
-
-### Parse parameters and apply tweaks ###
+### Parse parameters and apply preset ###
 ${preset} = ""
 ${PSCommandArgs} = ${args}
 If (${args} -And ${args}[0].ToLower() -eq "-preset") {
@@ -791,13 +865,12 @@ If (${args} -And ${args}[0].ToLower() -eq "-preset") {
 }
 
 If (${args}) {
-	${tweaks} = ${args}
+	${Full} = ${args}
 	If (${preset}) {
-		${tweaks} = Get-Content ${preset} -ErrorAction Stop | ForEach { $_.Trim() } | Where { $_ -ne "" -and $_[0] -ne "#" }
+		${Full} = Get-Content ${preset} -ErrorAction Stop | ForEach { $_.Trim() } | Where { $_ -ne "" -and $_[0] -ne "#" }
 	}
 }
 
-# Call the desired tweak functions
-Startup
-CheckOSVersion
-${tweaks} | ForEach { Invoke-Expression $_ }
+### Start ###
+CheckOs
+${Full}| ForEach { Invoke-Expression $_ }
