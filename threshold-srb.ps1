@@ -30,8 +30,8 @@ Function CheckOs {
         Write-Output ""
         Write-Output "Sorry, the script won't execute."
         Write-Output ""
-        Write-Output "The script was only made for: ${OsEdition},"
-        Write-Output "and you are using: ${validatedOsEdition}."
+        Write-Output "The script was only made for: ${validatedOsEdition},"
+        Write-Output "and you are using: ${OsEdition}."
         Write-Output ""
         Write-Output "Closing script..."
         Start-Sleep 20
