@@ -102,7 +102,7 @@ Function ProgramsSetup {
     Remove-Module BitsTransfer
 	choco install 7zip.install -y | Out-Null
 	choco install steam -y | Out-Null
-	choco install origin -y | Out-Null
+	choco install origin -y --ignore-checksums | Out-Null
 	choco install firefoxesr -y | Out-Null
 	Get-AppxPackage -allusers | Remove-AppxPackage | Out-Null
 }
@@ -217,7 +217,7 @@ Function PrivacySettings {
 
 ### Security settings ###
 Function SecuritySettings {
-	Write-Output "Hardening security parameters..."
+	Write-Output "Setting up security parameters..."
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ConsentPromptBehaviorAdmin" -Type DWord -Value 2
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ConsentPromptBehaviorUser" -Type DWord -Value 2
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "PromptOnSecureDesktop" -Type DWord -Value 1
@@ -848,7 +848,7 @@ Function ApplicationsSettings {
 	DISM /Online /Remove-Capability /CapabilityName:Rsat.RemoteDesktop.Services.Tools~~~~0.0.1.0 /NoRestart | Out-Null
 	DISM /Online /Remove-Capability /CapabilityName:Rsat.ServerManager.Tools~~~~0.0.1.0 /NoRestart | Out-Null
 	DISM /Online /Remove-Capability /CapabilityName:Rsat.Shielded.VM.Tools~~~~0.0.1.0 /NoRestart | Out-Null
-	DISM /Online /Remove-Capability /CapabilityName:Rsat.StorageMigrationService.Management.Tools~~~~0.0.1 /NoRestart | Out-Null.0
+	DISM /Online /Remove-Capability /CapabilityName:Rsat.StorageMigrationService.Management.Tools~~~~0.0.1 /NoRestart | Out-Null
 	DISM /Online /Remove-Capability /CapabilityName:Rsat.StorageReplica.Tools~~~~0.0.1.0 /NoRestart | Out-Null
 	DISM /Online /Remove-Capability /CapabilityName:Rsat.SystemInsights.Management.Tools~~~~0.0.1.0 /NoRestart | Out-Null
 	DISM /Online /Remove-Capability /CapabilityName:Rsat.VolumeActivation.Tools~~~~0.0.1.0 /NoRestart | Out-Null
