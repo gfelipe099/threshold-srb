@@ -53,22 +53,22 @@ Function CheckOs {
 
 Function Startup {
 	Write-Output ""
-    Write-Output "System Readiness for Business"
-    Write-Output ""
-    Write-Output ""
-    Write-Output "Starting script..."
-    Start-Sleep 5
-    RequireAdmin
+	Write-Output "System Readiness for Business"
+	Write-Output ""
+	Write-Output ""
+	Write-Output "Starting script..."
+	Start-Sleep 5
+	RequireAdmin
 }
 
 ## Presets ##
 ${Full} = @(
 	"ProgramsSetup",
-    "PrivacySettings",
-    "SecuritySettings",
+	"PrivacySettings",
+	"SecuritySettings",
 	"ServicesSettings",
 	"UISettings",
-    "WindowsExplorerSettings",
+	"WindowsExplorerSettings",
 	"ApplicationsSettings",
 	"Reboot"
     )
@@ -95,16 +95,16 @@ Function ProgramsSetup {
 	Write-Output "Installing and configuring programs... "
 	Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')) | Out-Null
 	choco install chocolatey-core.extension -y | Out-Null
-	Import-Module BitsTransfer
+	Import-Module BitsTransfer | Out-Null
 	Start-BitsTransfer -Source "https://raw.githubusercontent.com/gfelipe099/threshold-readiness/master/ooshutup10.cfg" -Destination ooshutup10.cfg | Out-Null
 	Start-BitsTransfer -Source "https://dl5.oo-software.com/files/ooshutup10/OOSU10.exe" -Destination OOSU10.exe | Out-Null
 	./OOSU10.exe ooshutup10.cfg /quiet
-    Remove-Module BitsTransfer
+	Remove-Module BitsTransfer
 	choco install 7zip.install -y | Out-Null
 	choco install steam -y | Out-Null
 	choco install origin -y --ignore-checksums | Out-Null
 	choco install firefoxesr -y | Out-Null
-	Get-AppxPackage -allusers | Remove-AppxPackage | Out-Null
+	# Get-AppxPackage -allusers | Remove-AppxPackage | Out-Null
 }
 
 ### Privacy settings ###
@@ -133,10 +133,9 @@ Function PrivacySettings {
 		New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Force | Out-Null
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "EnableSmartScreen" -ErrorAction SilentlyContinue
-	If (!(Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\MicrosoftEdge\PhishingFilter")) {
-		New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\MicrosoftEdge\PhishingFilter" -Force | Out-Null
+	If (!(Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\MicrosoftEdge\PhishingFilter")) { | Out-Null
 	}
-	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\MicrosoftEdge\PhishingFilter" -Name "EnabledV9" -ErrorAction SilentlyContinue
+	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\MicrosoftEdge\PhishingFilter" -Name "EnabledV9" -Type DWord -Value 1 -ErrorAction SilentlyContinue
 	Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "BingSearchEnabled" -Type DWord -Value 0
 	Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "CortanaConsent" -Type DWord -Value 0
 	If (!(Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search")) {
@@ -183,7 +182,7 @@ Function PrivacySettings {
 	}
 	Set-ItemProperty -Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Name "DisableTailoredExperiencesWithDiagnosticData" -Type DWord -Value 1
 	If (!(Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo")) {
-		New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo" | Out-Null
+		New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo" -Force | Out-Null
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo" -Name "DisabledByGroupPolicy" -Type DWord -Value 1
 	If (!(Test-Path "HKCU:\SOFTWARE\Microsoft\Personalization\Settings")) {
@@ -206,13 +205,13 @@ Function PrivacySettings {
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting" -Name "Disabled" -Type DWord -Value 1
 	Disable-ScheduledTask -TaskName "Microsoft\Windows\Windows Error Reporting\QueueReporting" | Out-Null
 	If (!(Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config")) {
-		New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config" | Out-Null
+		New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config" -Force | Out-Null
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config" -Name "DODownloadMode" -Type DWord -Value 1
-	Stop-Service "DiagTrack" -WarningAction SilentlyContinue
-	Set-Service "DiagTrack" -StartupType Disabled
-	Stop-Service "dmwappushservice" -WarningAction SilentlyContinue
-	Set-Service "dmwappushservice" -StartupType Disabled
+	Stop-Service "DiagTrack" -WarningAction SilentlyContinue | Out-Null
+	Set-Service "DiagTrack" -StartupType Disabled | Out-Null
+	Stop-Service "dmwappushservice" -WarningAction SilentlyContinue | Out-Null
+	Set-Service "dmwappushservice" -StartupType Disabled | Out-Null
 }
 
 ### Security settings ###
@@ -249,7 +248,6 @@ Function SecuritySettings {
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet" -Name "SpynetReporting" -Type DWord -Value 0
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet" -Name "SubmitSamplesConsent" -Type DWord -Value 2
 	bcdedit /set `{current`} bootmenupolicy Standard | Out-Null
-	bcdedit /set `{current`} nx OptIn | Out-Null
 	bcdedit /set `{current`} nx AlwaysOn | Out-Null
 	If (!(Test-Path "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity")) {
 		New-Item -Path "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity" -Force | Out-Null
@@ -333,6 +331,7 @@ Function ServicesSettings{
 	powercfg /X standby-timeout-ac 0
 	powercfg /X standby-timeout-dc 0
 	Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -Type DWord -Value 0
+	powercfg -h off | Out-Null
 }
 
 ### UI settings ###
@@ -407,7 +406,7 @@ Function ApplicationsSettings {
 	Disable-WindowsOptionalFeature -Online -FeatureName "Printing-PrintToPDFServices-Features" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "Printing-XPSServices-Features" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "Printing-PrintToPDFServices-Features" -NoRestart -WarningAction SilentlyContinue | Out-Null
-	Disable-WindowsOptionalFeature -Online -FeatureName "Printing-XPSServices-Features"
+	Disable-WindowsOptionalFeature -Online -FeatureName "Printing-XPSServices-Features" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "SearchEngine-Client-Package" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "MSRDC-Infrastructure" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "TelnetClient" -NoRestart -WarningAction SilentlyContinue | Out-Null
@@ -511,7 +510,7 @@ Function ApplicationsSettings {
 	Disable-WindowsOptionalFeature -Online -FeatureName "MultiPoint-Connector" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "MultiPoint-Connector-Services" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "MultiPoint-Tools" -NoRestart -WarningAction SilentlyContinue | Out-Null
-	Enable-WindowsOptionalFeature -Online -FeatureName "Windows-Defender-Default-Definitions" -All
+	Enable-WindowsOptionalFeature -Online -FeatureName "Windows-Defender-Default-Definitions" -All -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "WorkFolders-Client" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "Microsoft-Windows-Subsystem-Linux" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "HypervisorPlatform" -NoRestart -WarningAction SilentlyContinue | Out-Null
