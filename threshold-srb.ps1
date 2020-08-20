@@ -104,6 +104,7 @@ Function ProgramsSetup {
 	choco install steam -y | Out-Null
 	choco install origin -y --ignore-checksums | Out-Null
 	choco install firefoxesr -y | Out-Null
+	choco install reddit-wallpaper-changer -y | Out-Null
 	# Get-AppxPackage -allusers | Remove-AppxPackage | Out-Null
 }
 
