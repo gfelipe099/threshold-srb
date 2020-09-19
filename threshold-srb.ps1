@@ -14,7 +14,7 @@ if (!${validatedOsVersion}) {
 }
 
 if (!${validatedOsEdition}) {
-	New-Variable -Name validatedOsEdition -Value "Microsoft Windows 10 Enterprise N LTSC" | Out-Null
+    New-Variable -Name validatedOsEdition -Value "Microsoft Windows 10 Enterprise N LTSC" | Out-Null
 }
 
 if (!${OsVersion}) {
@@ -22,7 +22,7 @@ if (!${OsVersion}) {
 }
 
 if (!${OsEdition}) {
-	New-Variable -Name OsEdition -Value (gwmi win32_operatingsystem).caption | Out-Null
+    New-Variable -Name OsEdition -Value (gwmi win32_operatingsystem).caption | Out-Null
 }
 
 Function CheckOs {
@@ -52,13 +52,13 @@ Function CheckOs {
 }
 
 Function Startup {
-	Write-Output ""
-	Write-Output "System Readiness for Business"
-	Write-Output ""
-	Write-Output ""
-	Write-Output "Starting script..."
-	Start-Sleep 5
-	RequireAdmin
+    Write-Output ""
+    Write-Output "System Readiness for Business"
+    Write-Output ""
+    Write-Output ""
+    Write-Output "Starting script..."
+    Start-Sleep 5
+    RequireAdmin
 }
 
 ## Presets ##
@@ -74,17 +74,17 @@ ${Full} = @(
     )
 
 Function RequireAdmin {
-	If (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")) {
-		Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"${PSCommandPath}`" $${PSCommandArgs}" -WorkingDirectory ${pwd} -Verb RunAs
-		Exit
-	}
+    If (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")) {
+	Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"${PSCommandPath}`" $${PSCommandArgs}" -WorkingDirectory ${pwd} -Verb RunAs
+	Exit
+    }
 }
 
 Function Reboot {
-	Write-Output "System Readiness for Business has finished! Press any key to reboot your computer..."
-	[Console]::ReadKey(${true}) | Out-Null
-	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\PowerShell\1\ShellIds\Microsoft.PowerShell" -Name "ExecutionPolicy" -Type String -Value "Restricted"
-	Start-Sleep 5
+    Write-Output "System Readiness for Business has finished! Press any key to reboot your computer..."
+    [Console]::ReadKey(${true}) | Out-Null
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\PowerShell\1\ShellIds\Microsoft.PowerShell" -Name "ExecutionPolicy" -Type String -Value "Restricted"
+    Start-Sleep 5
     Restart-Computer
 }
 
@@ -92,20 +92,16 @@ Function Reboot {
 
 ### Programs settings ###
 Function ProgramsSetup {
-	Write-Output "Installing and configuring programs... "
-	Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')) | Out-Null
-	choco install chocolatey-core.extension -y | Out-Null
-	Import-Module BitsTransfer | Out-Null
-	Start-BitsTransfer -Source "https://raw.githubusercontent.com/gfelipe099/threshold-readiness/master/ooshutup10.cfg" -Destination ooshutup10.cfg | Out-Null
-	Start-BitsTransfer -Source "https://dl5.oo-software.com/files/ooshutup10/OOSU10.exe" -Destination OOSU10.exe | Out-Null
-	./OOSU10.exe ooshutup10.cfg /quiet
-	Remove-Module BitsTransfer
-	choco install 7zip.install -y | Out-Null
-	choco install steam -y | Out-Null
-	choco install origin -y --ignore-checksums | Out-Null
-	choco install firefoxesr -y | Out-Null
-	choco install reddit-wallpaper-changer -y | Out-Null
-	# Get-AppxPackage -allusers | Remove-AppxPackage | Out-Null
+    Write-Output "Installing and configuring programs... "
+    Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')) | Out-Null
+    choco install chocolatey-core.extension -y | Out-Null
+    Import-Module BitsTransfer | Out-Null
+    Start-BitsTransfer -Source "https://raw.githubusercontent.com/gfelipe099/threshold-readiness/master/ooshutup10.cfg" -Destination ooshutup10.cfg | Out-Null
+    Start-BitsTransfer -Source "https://dl5.oo-software.com/files/ooshutup10/OOSU10.exe" -Destination OOSU10.exe | Out-Null
+    ./OOSU10.exe ooshutup10.cfg /quiet
+    Remove-Module BitsTransfer
+    choco install 7zip.install steam origin reddit-wallpaper-changer -y | Out-Null
+    Get-AppxPackage -AllUsers | where-object {$_.name -notlike "*Microsoft.WindowsStore*"} | where-object {$_.name -notlike "*NVIDIACorp.NVIDIAControlPanel*"} | Remove-AppxPackage
 }
 
 ### Privacy settings ###
@@ -225,13 +221,13 @@ Function SecuritySettings {
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "PromptOnSecureDesktop" -Type DWord -Value 1
 	Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableLinkedConnections" -ErrorAction SilentlyContinue
 	Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" -Name "AutoShareWks" -Type DWord -Value 0
-	Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force
-	Set-SmbServerConfiguration -EnableSMB2Protocol $false -Force
+	Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force | Out-Null
+	Set-SmbServerConfiguration -EnableSMB2Protocol $false -Force | Out-Null
 	If (!(Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient")) {
 		New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient" -Force | Out-Null
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient" -Name "EnableMulticast" -Type DWord -Value 0
-	Set-NetConnectionProfile -NetworkCategory Public
+	Set-NetConnectionProfile -NetworkCategory Public | Out-Null
 	Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\CurrentVersion\NetworkList\Signatures\010103000F0000F0010000000F0000F0C967A3643C3AD745950DA7859209176EF5B87C875FA20DF21951640E807D7C24" -Name "Category" -ErrorAction SilentlyContinue
 	If (!(Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\NcdAutoSetup\Private")) {
 		New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\NcdAutoSetup\Private" -Force | Out-Null
@@ -292,10 +288,6 @@ Function ServicesSettings{
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "NoAutoRebootWithLoggedOnUsers" -Type DWord -Value 1
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "AUPowerManagement" -Type DWord -Value 0
-	Stop-Service "HomeGroupListener" -WarningAction SilentlyContinue
-	Set-Service "HomeGroupListener" -StartupType Disabled
-	Stop-Service "HomeGroupProvider" -WarningAction SilentlyContinue
-	Set-Service "HomeGroupProvider" -StartupType Disabled
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "EnableCdp" -Type DWord -Value 0
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "EnableMmx" -Type DWord -Value 0
 	Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance" -Name "fAllowToGetHelp" -Type DWord -Value 0
@@ -334,7 +326,7 @@ Function ServicesSettings{
 	powercfg /X standby-timeout-ac 0
 	powercfg /X standby-timeout-dc 0
 	Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -Type DWord -Value 0
-	powercfg -h off | Out-Null
+	powercfg -h off
 }
 
 ### UI settings ###
@@ -373,7 +365,10 @@ Function UISettings {
 	Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ListviewAlphaSelect" -Type DWord -Value 0
 	Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ListviewShadow" -Type DWord -Value 0
 	Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAnimations" -Type DWord -Value 0
-	Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" -Name "VisualFXSetting" -Type DWord -Value 3
+    If (!(Test-Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects")) {
+        New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" | Out-Null
+    }
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" -Name "VisualFXSetting" -Type DWord -Value 3
 	Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\DWM" -Name "EnableAeroPeek" -Type DWord -Value 0
 }
 
@@ -389,6 +384,9 @@ Function WindowsExplorerSettings {
 ### Application settings ###
 Function ApplicationsSettings {
 	Write-Output "Setting up applications parameters..."
+	If (!(Test-Path "HKCU:\System\GameConfigStore")) {
+		New-Item -Path "HKCU:\System\GameConfigStore" | Out-Null
+	}
 	Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_Enabled" -Type DWord -Value 0
 	If (!(Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR")) {
 		New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR" | Out-Null
@@ -403,8 +401,6 @@ Function ApplicationsSettings {
 	}
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\MicrosoftEdge\Addons" -Name "FlashPlayerEnabled" -Type DWord -Value 0
 	Write-Output "Configuring Windows optional features..."
-	Disable-WindowsOptionalFeature -Online -FeatureName "WindowsMediaPlayer" -NoRestart -WarningAction SilentlyContinue | Out-Null
-	Disable-WindowsOptionalFeature -Online -FeatureName "Internet-Explorer-Optional-$env:PROCESSOR_ARCHITECTURE" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "WorkFolders-Client" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "Printing-PrintToPDFServices-Features" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "Printing-XPSServices-Features" -NoRestart -WarningAction SilentlyContinue | Out-Null
@@ -466,13 +462,11 @@ Function ApplicationsSettings {
 	Enable-WindowsOptionalFeature -Online -FeatureName "WCF-TCP-PortSharing45" -All -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-StaticContent" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-DefaultDocument" -NoRestart -WarningAction SilentlyContinue | Out-Null
-	Disable-WindowsOptionalFeature -Online -FeatureName "-DirectoryBrowsing" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-WebDAV" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-WebSockets" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-ApplicationInit" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-ASPNET" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-ASPNET45" -NoRestart -WarningAction SilentlyContinue | Out-Null
-	Disable-WindowsOptionalFeature -Online -FeatureName "-ASP" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-CGI" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-ISAPIExtensions" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-ISAPIFilter" -NoRestart -WarningAction SilentlyContinue | Out-Null
@@ -491,10 +485,8 @@ Function ApplicationsSettings {
 	Disable-WindowsOptionalFeature -Online -FeatureName "MSMQ-Container" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "MSMQ-DCOMProxy" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "MSMQ-Server" -NoRestart -WarningAction SilentlyContinue | Out-Null
-	Disable-WindowsOptionalFeature -Online -FeatureName "-ADIntegration" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "MSMQ-HTTP" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "MSMQ-Multicast" -NoRestart -WarningAction SilentlyContinue | Out-Null
-	Disable-WindowsOptionalFeature -Online -FeatureName "Triggers" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-CertProvider" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-WindowsAuthentication" -NoRestart -WarningAction SilentlyContinue | Out-Null
 	Disable-WindowsOptionalFeature -Online -FeatureName "IIS-DigestAuthentication" -NoRestart -WarningAction SilentlyContinue | Out-Null
