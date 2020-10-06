@@ -6,7 +6,6 @@
 # For Microsoft Windows 10 Enterprise N LTSC 2019 x64
 #
 Clear-Host
-###### MAIN FUNCTIONS ######
 
 ### Check system version and edition ###
 if (!${validatedOsVersion}) {
@@ -52,13 +51,13 @@ Function CheckOs {
 }
 
 Function Startup {
+    RequireAdmin
     Write-Output ""
     Write-Output "System Readiness for Business"
     Write-Output ""
     Write-Output ""
     Write-Output "Starting script..."
     Start-Sleep 5
-    RequireAdmin
 }
 
 ## Presets ##
@@ -73,6 +72,7 @@ ${Full} = @(
 	"Reboot"
     )
 
+### System functions ###
 Function RequireAdmin {
     If (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")) {
 	Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"${PSCommandPath}`" $${PSCommandArgs}" -WorkingDirectory ${pwd} -Verb RunAs
@@ -84,29 +84,30 @@ Function Reboot {
     Write-Output "System Readiness for Business has finished! Press any key to reboot your computer..."
     [Console]::ReadKey(${true}) | Out-Null
     Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\PowerShell\1\ShellIds\Microsoft.PowerShell" -Name "ExecutionPolicy" -Type String -Value "Restricted"
+	Write-Output "Rebooting the system..."
     Start-Sleep 5
     Restart-Computer
 }
 
-###### MAIN FUNCTIONS ######
-
 ### Programs settings ###
 Function ProgramsSetup {
-    Write-Output "Installing and configuring programs... "
+    Write-Output "Installing Chocolatey package manager for Windows... "
     Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')) | Out-Null
     choco install chocolatey-core.extension -y | Out-Null
-    Import-Module BitsTransfer | Out-Null
-    Start-BitsTransfer -Source "https://raw.githubusercontent.com/gfelipe099/threshold-readiness/master/ooshutup10.cfg" -Destination ooshutup10.cfg | Out-Null
-    Start-BitsTransfer -Source "https://dl5.oo-software.com/files/ooshutup10/OOSU10.exe" -Destination OOSU10.exe | Out-Null
-    ./OOSU10.exe ooshutup10.cfg /quiet
-    Remove-Module BitsTransfer
-    choco install 7zip.install steam origin reddit-wallpaper-changer -y | Out-Null
-    Get-AppxPackage -AllUsers | where-object {$_.name -notlike "*Microsoft.WindowsStore*"} | where-object {$_.name -notlike "*NVIDIACorp.NVIDIAControlPanel*"} | Remove-AppxPackage
+	Write-Output "Installing applications..."
+    choco install 7zip.install steam origin reddit-wallpaper-changer epicgameslauncher spotify discord -y | Out-Null
+	Write-Output "Uninstalling UWP apps except the Windows Store, NVIDIA Control Panel and Intel Graphics Command Center"
+	Get-AppxPackage -AllUsers | where-object {$_.name -notlike "*Microsoft.WindowsStore*"} | where-object {$_.name -notlike "*AppUp.IntelGraphicsExperience*"} | where-object {$_.name -notlike "*NVIDIACorp.NVIDIAControlPanel*"} | Remove-AppxPackage
 }
 
 ### Privacy settings ###
 Function PrivacySettings {
 	Write-Output "Configuring privacy settings..."
+    Import-Module BitsTransfer | Out-Null
+    Start-BitsTransfer -Source "https://raw.githubusercontent.com/gfelipe099/threshold-readiness/master/ooshutup10.cfg" -Destination ooshutup10.cfg | Out-Null
+    Start-BitsTransfer -Source "https://dl5.oo-software.com/files/ooshutup10/OOSU10.exe" -Destination OOSU10.exe | Out-Null
+    ./OOSU10.exe ooshutup10.cfg /quiet
+    Remove-Module BitsTransfer
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection" -Name "AllowTelemetry" -Type DWord -Value 0
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Policies\DataCollection" -Name "AllowTelemetry" -Type DWord -Value 0
 	Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name "AllowTelemetry" -Type DWord -Value 0
