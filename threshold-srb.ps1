@@ -25,33 +25,30 @@ if (!${osEdition}) {
 }
 
 Function CheckOs {
-    if (${osEdition} -ne "${validatedOsEdition}") {
-        Add-Type -AssemblyName System.Windows.Forms
-        [System.Windows.Forms.Application]::EnableVisualStyles()
-        If (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]'Administrator')) {
-            Switch ([System.Windows.Forms.MessageBox]::Show("Sorry the script won't execute, it was made only for ${validatedOsEdition}, and you are using ${osEdition}.", "Unsupported system edition", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)) {
-                OK {
-                    Break
-                }
-            }
-        }
-        Break
-        if (${osVersion} -ne "${validatedOsVersion}") {
-            Add-Type -AssemblyName System.Windows.Forms
-            [System.Windows.Forms.Application]::EnableVisualStyles()
-            If (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]'Administrator')) {
-                Switch ([System.Windows.Forms.MessageBox]::Show("Sorry the script won't execute, the version you are currently using ${validatedOsEdition}, and you are using is ${osEdition}, which is not supported yet. Only the version v${validatedOsVersion} is compatible.", "Unsupported system version", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)) {
-                    OK {
-                        Break
-                    }
-                }
-            }
-            Break
+    if (${OsEdition} -ne "${validatedOsEdition}") {
+        Write-Output ""
+        Write-Output "Sorry, the script won't execute."
+        Write-Output ""
+        Write-Output "The script was only made for: ${validatedOsEdition},"
+        Write-Output "and you are using: ${OsEdition}."
+        Write-Output ""
+        Write-Output "Closing script..."
+        Start-Sleep 20
+        exit
+        if (${OsVersion} -ne "${validatedOsVersion}") {
+            Write-Output ""
+            Write-Output "Sorry, the script won't continue."
+            Write-Output ""
+            Write-Output "The version you currently use is: v${OsVersion}, which is not supported yet."
+            Write-Output "Only the version v${validatedOsVersion} is compatible."
+            Write-Output ""
+            Write-Output "Closing script..."
+            Start-Sleep 20
+            exit
         }
     }
     Startup
 }
-
 Function Startup {
     RequireAdmin
     Write-Output ""
@@ -75,16 +72,10 @@ ${Full} = @(
 
 ### System functions ###
 Function RequireAdmin {
-    Add-Type -AssemblyName System.Windows.Forms
-    [System.Windows.Forms.Application]::EnableVisualStyles()
-    If (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]'Administrator')) {
-        Switch ([System.Windows.Forms.MessageBox]::Show('This script must be executed as administrator.', "Insufficient privileges", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)) {
-            OK {
-                Break
-            }
-        }
+    If (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")) {
+        Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"${PSCommandPath}`" $${PSCommandArgs}" -WorkingDirectory ${pwd} -Verb RunAs
+	Exit
     }
-    Break
 }
 
 Function Reboot {
