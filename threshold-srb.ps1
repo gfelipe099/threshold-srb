@@ -16,187 +16,137 @@ if (!${validatedOsEdition}) {
     New-Variable -Name validatedOsEdition -Value "Microsoft Windows 10 Enterprise N LTSC" | Out-Null
 }
 
-if (!${OsVersion}) {
+if (!${osVersion}) {
     New-Variable -Name osVersion -Value (gwmi win32_operatingsystem).version | Out-Null
 }
 
-if (!${OsEdition}) {
+if (!${osEdition}) {
     New-Variable -Name osEdition -Value (gwmi win32_operatingsystem).caption | Out-Null
 }
 
-${WShell} = New-Object -ComObject Wscript.Shell
-Add-Type -AssemblyName System.Windows.Forms
-[System.Windows.Forms.Application]::EnableVisualStyles()
-    If (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]'Administrator')) {
-        Switch ([System.Windows.MessageBox]::Show("This script needs Administrator privileges to run. Do you want to give permissions to this script?", "Insufficient permissions", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)) {
-        Yes {
-            Start-Process PowerShell.exe -ArgumentList ("-NoProfile -ExecutionPolicy Bypass -File `"{0}`"" -f $PSCommandPath) -Verb RunAs
-            Exit
+Function CheckOs {
+    if (${OsEdition} -ne "${validatedOsEdition}") {
+        Write-Output ""
+        Write-Output "Sorry, the script won't execute."
+        Write-Output ""
+        Write-Output "The script was only made for: ${validatedOsEdition},"
+        Write-Output "and you are using: ${OsEdition}."
+        Write-Output ""
+        Write-Output "Closing script..."
+        Start-Sleep 20
+        exit
+        if (${OsVersion} -ne "${validatedOsVersion}") {
+            Write-Output ""
+            Write-Output "Sorry, the script won't continue."
+            Write-Output ""
+            Write-Output "The version you currently use is: v${OsVersion}, which is not supported yet."
+            Write-Output "Only the version v${validatedOsVersion} is compatible."
+            Write-Output ""
+            Write-Output "Closing script..."
+            Start-Sleep 20
+            exit
         }
-        No {
-            Switch ([System.Windows.MessageBox]::Show("This script cannot be executed without Administrator privileges.", "threshold-srb", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)) {
-            OK {
-                Exit
-            }
-            }
-        }
+    }
+    Startup
+}
+Function Startup {
+    RequireAdmin
+    Write-Output ""
+    Write-Output "System Readiness for Business"
+    Write-Output ""
+    Write-Output ""
+    Write-Output "Starting script..."
+    Start-Sleep 5
+}
+
+## Presets ##
+${Full} = @(
+    "ProgramsSetup",
+    "PrivacySettings",
+    "SecuritySettings",
+    "PerformanceSettings",
+    "InterfaceSettings",
+    "WindowsOptionalFeatures",
+    "Reboot"
+)
+
+### System functions ###
+Function RequireAdmin {
+    If (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")) {
+        Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"${PSCommandPath}`" $${PSCommandArgs}" -WorkingDirectory ${pwd} -Verb RunAs
+	Exit
     }
 }
 
-${threshold-srb}                                                = New-Object System.Windows.Forms.Form
-${threshold-srb}.ClientSize                                     = New-Object System.Drawing.Point(1050,700)
-${threshold-srb}.Text                                           = "System Readiness for Business"
-${threshold-srb}.TopMost                                        = $false
+Function Reboot {
+    Write-Output "System Readiness for Business has finished! Press any key to reboot your computer..."
+    [Console]::ReadKey(${true}) | Out-Null
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\PowerShell\1\ShellIds\Microsoft.PowerShell" -Name "ExecutionPolicy" -Type String -Value "Restricted"
+    Write-Output "Rebooting the system..."
+    Start-Sleep 5
+    Restart-Computer
+}
 
-${ProgramsContainer}                                            = New-Object System.Windows.Forms.Panel
-${ProgramsContainer}.AutoSize                                   = $true
-
-${ProgramsSetup}                                                = New-Object System.Windows.Forms.Label
-${ProgramsSetup}.Text                                           = "Programs Setup"
-${ProgramsSetup}.AutoSize                                       = $true
-${ProgramsSetup}.Location                                       = New-Object System.Drawing.Point(10,15)
-${ProgramsSetup}.Font                                           = New-Object System.Drawing.Font('Microsoft Sans Serif',30)
-
-${ProgramsSetup_Install_Chocolatey}                             = New-Object System.Windows.Forms.Button
-${ProgramsSetup_Install_Chocolatey}.Text                        = "Install Chocolatey"
-${ProgramsSetup_Install_Chocolatey}.AutoSize                    = $true
-${ProgramsSetup_Install_Chocolatey}.Location                    = New-Object System.Drawing.Point(30,80)
-${ProgramsSetup_Install_Chocolatey}.Font                        = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
-
-${ProgramsSetup_Install_7zip}                                   = New-Object System.Windows.Forms.Button
-${ProgramsSetup_Install_7zip}.Text                              = "Install 7-Zip"
-${ProgramsSetup_Install_7zip}.AutoSize                          = $true
-${ProgramsSetup_Install_7zip}.Location                          = New-Object System.Drawing.Point(30,135)
-${ProgramsSetup_Install_7zip}.Font                              = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
-
-${ProgramsSetup_Install_Steam}                                  = New-Object System.Windows.Forms.Button
-${ProgramsSetup_Install_Steam}.Text                             = "Install Steam"
-${ProgramsSetup_Install_Steam}.AutoSize                         = $true
-${ProgramsSetup_Install_Steam}.Location                         = New-Object System.Drawing.Point(30,190)
-${ProgramsSetup_Install_Steam}.Font                             = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
-
-${ProgramsSetup_Install_Rwc}                                    = New-Object System.Windows.Forms.Button
-${ProgramsSetup_Install_Rwc}.Text                               = "Install Reddit Wallpaper Changer"
-${ProgramsSetup_Install_Rwc}.AutoSize                           = $true
-${ProgramsSetup_Install_Rwc}.Location                           = New-Object System.Drawing.Point(30,245)
-${ProgramsSetup_Install_Rwc}.Font                               = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
-
-${ProgramsSetup_Install_Egl}                                    = New-Object System.Windows.Forms.Button
-${ProgramsSetup_Install_Egl}.Text                               = "Install Epic Games Launcher"
-${ProgramsSetup_Install_Egl}.AutoSize                           = $true
-${ProgramsSetup_Install_Egl}.Location                           = New-Object System.Drawing.Point(30,300)
-${ProgramsSetup_Install_Egl}.Font                               = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
-
-${ProgramsSetup_Install_Spotify}                                = New-Object System.Windows.Forms.Button
-${ProgramsSetup_Install_Spotify}.Text                           = "Install Spotify"
-${ProgramsSetup_Install_Spotify}.AutoSize                       = $true
-${ProgramsSetup_Install_Spotify}.Location                       = New-Object System.Drawing.Point(30,355)
-${ProgramsSetup_Install_Spotify}.Font                           = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
-
-${ProgramsSetup_Install_Discord}                                = New-Object System.Windows.Forms.Button
-${ProgramsSetup_Install_Discord}.Text                           = "Install Discord"
-${ProgramsSetup_Install_Discord}.AutoSize                       = $true
-${ProgramsSetup_Install_Discord}.Location                       = New-Object System.Drawing.Point(30,410)
-${ProgramsSetup_Install_Discord}.Font                           = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
-
-${ProgramsSetup_Install_Bleachbit}                              = New-Object System.Windows.Forms.Button
-${ProgramsSetup_Install_Bleachbit}.Text                         = "Install BleachBit"
-${ProgramsSetup_Install_Bleachbit}.AutoSize                     = $true
-${ProgramsSetup_Install_Bleachbit}.Location                     = New-Object System.Drawing.Point(30,465)
-${ProgramsSetup_Install_Bleachbit}.Font                         = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
-
-${SystemAdministration}                                         = New-Object System.Windows.Forms.Panel
-${SystemAdministration}.AutoSize                                = $true
-
-${SystemReadiness}                                              = New-Object System.Windows.Forms.Label
-${SystemReadiness}.Text                                         = "System Administration"
-${SystemReadiness}.AutoSize                                     = $true
-${SystemReadiness}.Location                                     = New-Object System.Drawing.Point(550,15)
-${SystemReadiness}.Font                                         = New-Object System.Drawing.Font('Microsoft Sans Serif',30)
-
-${SystemReadiness_Apply}                                        = New-Object System.Windows.Forms.Button
-${SystemReadiness_Apply}.Text                                   = "Apply System Readiness"
-${SystemReadiness_Apply}.AutoSize                               = $true
-${SystemReadiness_Apply}.Location                               = New-Object System.Drawing.Point(580,80)
-${SystemReadiness_Apply}.Font                                   = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
-
-${ProgramsSetup_Install_Chocolatey}.Add_Click({
-    Write-Host "Installing Chocolatey package manager for Windows... "
+### Programs settings ###
+Function ProgramsSetup {
+    Write-Output "Installing Chocolatey package manager for Windows... "
     Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')) | Out-Null
-    choco install chocolatey-core.extension -y
-    ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Install_Chocolatey}.Text)",0x0)
-})
+    choco install chocolatey-core.extension -y | Out-Null
+    Write-Output "Installing applications..."
+    choco install 7zip.install steam origin reddit-wallpaper-changer epicgameslauncher spotify discord bleachbit -y | Out-Null
+}
 
-${ProgramsSetup_Install_7Zip}.Add_Click({
-    Write-Host "Installing 7-Zip... "
-    choco install 7-zip.install -y
-    ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Install_7Zip}.Text)",0x0)
-})
-
-${ProgramsSetup_Install_Steam}.Add_Click({
-    Write-Output "Installing Steam... "
-    choco install steam -y
-    ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Install_Steam}.Text)",0x0)
-})
-
-${ProgramsSetup_Install_Rwc}.Add_Click({
-    Write-Output "Installing Reddit Wallpaper Changer... "
-    choco install reddit-wallpaper-changer -y
-    ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Install_Rwc}.Text)",0x0)
-})
-
-${ProgramsSetup_Install_Egl}.Add_Click({
-    Write-Output "Installing Epic Games Launcher... "
-    choco install reddit-wallpaper-changer -y
-    ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Install_Egl}.Text)",0x0)
-})
-
-${ProgramsSetup_Install_Spotify}.Add_Click({
-    Write-Output "Installing Spotify... "
-    choco install spotify -y
-    ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Install_Spotify}.Text)",0x0)
-})
-
-${ProgramsSetup_Install_Discord}.Add_Click({
-    Write-Output "Installing Discord... "
-    choco install discord -y
-    ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Install_Discord}.Text)",0x0)
-})
-
-${ProgramsSetup_Install_Bleachbit}.Add_Click({
-    Write-Output "Installing BleachBit... "
-    choco install bleachbit -y
-    ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Install_Bleachbit}.Text)",0x0)
-})
-
-${SystemReadiness_Apply}.Add_Click({
-    # Privacy settings
+### Privacy settings ###
+Function PrivacySettings {
     Write-Output "Applying privacy settings..."
     Import-Module BitsTransfer | Out-Null
-    Start-BitsTransfer -Source "https://raw.githubusercontent.com/gfelipe099/threshold-srb/master/ooshutup10.cfg" -Destination ooshutup10.cfg | Out-Null
+    Start-BitsTransfer -Source "https://raw.githubusercontent.com/gfelipe099/threshold-readiness/master/ooshutup10.cfg" -Destination ooshutup10.cfg | Out-Null
     Start-BitsTransfer -Source "https://dl5.oo-software.com/files/ooshutup10/OOSU10.exe" -Destination OOSU10.exe | Out-Null
     ./OOSU10.exe ooshutup10.cfg /quiet
     Remove-Module BitsTransfer
+}
 
-    # Performance settings
+### Security settings ###
+Function SecuritySettings {
+    Write-Output "Applying security settings..."
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ConsentPromptBehaviorAdmin" -Type DWord -Value 5
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "PromptOnSecureDesktop" -Type DWord -Value 3
+    Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows Script Host\Settings" -Name "Enabled" -Type DWord -Value 0
+    If (!(Test-Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\QualityCompat")) {
+        New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\QualityCompat" | Out-Null
+    }
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\QualityCompat" -Name "cadca5fe-87d3-4b96-b7fb-a231484277cc" -Type DWord -Value 0
+}
+
+### Performance settings ###
+Function PerformanceSettings {
     Write-Output "Applying performance settings..."
+    Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "UserPreferencesMask" -Type Binary -Value ([byte[]](90,12,3,80,10,0,0,0))
+    Set-ItemProperty -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardDelay" -Type DWord -Value 0
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ListviewAlphaSelect" -Type DWord -Value 0
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ListviewShadow" -Type DWord -Value 0
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAnimations" -Type DWord -Value 0
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\" -Name "IconsOnly" -Type DWord -Value 1
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" -Name "VisualFXSetting" -Type DWord -Value 3
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\DWM" -Name "EnableAeroPeek" -Type DWord -Value 0
+}
 
-    # Interface settings
+### Interface settings ###
+Function InterfaceSettings {
     Write-Output "Applying interface settings..."
+    Set-ItemProperty -Path "HKCM:\Software\Microsoft\Windows\CurrentVersion\Explorer\" -Name "DisableUpgradeCleanup" -Type DWord -Value 0
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HiddenFileExt" -Type DWord -Value 0
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\" -Name "ShowTaskBarButton" -Type DWord -Value 0
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\" -Name "ShowCortanaButton" -Type DWord -Value 0
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\People" -Name "PeopleBand" -Type DWord -Value 0
     Set-ItemProperty -Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -Name "DisableNotificationCenter" -Type DWord -Value 1
     Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications" -Name "ToastEnabled" -Type DWord -Value 0
+    Set-ItemProperty -Path "HKCM:\SOFTWARE\Policies\Microsoft\Windows\Explorer\Advanced" -Name "Start_TrackDocs" -Type DWord -Value 0
+}
 
-    # Windows optional features
+### Application settings ###
+Function WindowsOptionalFeatures {
     Write-Output "Configuring Windows optional features..."
     Disable-WindowsOptionalFeature -Online -FeatureName "WorkFolders-Client" -NoRestart -WarningAction SilentlyContinue | Out-Null
     Disable-WindowsOptionalFeature -Online -FeatureName "Printing-PrintToPDFServices-Features" -NoRestart -WarningAction SilentlyContinue | Out-Null
@@ -652,10 +602,23 @@ ${SystemReadiness_Apply}.Add_Click({
     DISM /Online /Remove-Capability /CapabilityName:WMI-SNMP-Provider.Client~~~~0.0.1.0 /NoRestart | Out-Null
     DISM /Online /Remove-Capability /CapabilityName:XPS.Viewer~~~~0.0.1.0 /NoRestart | Out-Null
     Remove-Printer -Name "Fax" -ErrorAction SilentlyContinue | Out-Null
-})
+}
 
-${threshold-srb}.Controls.AddRange(@(${ProgramsContainer},${SystemAdministration}))
-${ProgramsContainer}.Controls.AddRange(@(${ProgramsSetup},${ProgramsSetup_Install_Chocolatey},${ProgramsSetup_Install_7zip},${ProgramsSetup_Install_Steam},${ProgramsSetup_Install_Origin},${ProgramsSetup_Install_Rwc},${ProgramsSetup_Install_Egl},${ProgramsSetup_Install_Spotify},${ProgramsSetup_Install_Discord},${ProgramsSetup_Install_Bleachbit},${SystemReadiness_Apply}))
-${SystemAdministration}.Controls.AddRange(@(${SystemReadiness},${SystemReadiness_Apply}))
+### Parse parameters and apply preset ###
+${preset} = ""
+${PSCommandArgs} = ${args}
+If (${args} -And ${args}[0].ToLower() -eq "-preset") {
+    ${preset} = Resolve-Path $(${args} | Select-Object -Skip 1)
+    ${PSCommandArgs} = "-preset `"${preset}`""
+}
 
-[void]${threshold-srb}.ShowDialog()
+If (${args}) {
+    ${Full} = ${args}
+    If (${preset}) {
+        ${Full} = Get-Content ${preset} -ErrorAction Stop | ForEach { $_.Trim() } | Where { $_ -ne "" -and $_[0] -ne "#" }
+    }
+}
+
+### Start ###
+CheckOs
+${Full}| ForEach { Invoke-Expression $_ }
