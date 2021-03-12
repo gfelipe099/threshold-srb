@@ -129,49 +129,49 @@ ${ProgramsSetup_Install_Chocolatey}.Add_Click({
 
 ${ProgramsSetup_Install_7Zip}.Add_Click({
     Write-Host "Installing 7-Zip... "
-    choco install 7-zip.install -y
+    choco install 7zip.install -y
     ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Install_7Zip}.Text)",0x0)
 })
 
 ${ProgramsSetup_Install_Steam}.Add_Click({
-    Write-Output "Installing Steam... "
+   Write-Host "Installing Steam... "
     choco install steam -y
     ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Install_Steam}.Text)",0x0)
 })
 
 ${ProgramsSetup_Install_Rwc}.Add_Click({
-    Write-Output "Installing Reddit Wallpaper Changer... "
+   Write-Host "Installing Reddit Wallpaper Changer... "
     choco install reddit-wallpaper-changer -y
     ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Install_Rwc}.Text)",0x0)
 })
 
 ${ProgramsSetup_Install_Egl}.Add_Click({
-    Write-Output "Installing Epic Games Launcher... "
+   Write-Host "Installing Epic Games Launcher... "
     choco install reddit-wallpaper-changer -y
     ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Install_Egl}.Text)",0x0)
 })
 
 ${ProgramsSetup_Install_Spotify}.Add_Click({
-    Write-Output "Installing Spotify... "
+   Write-Host "Installing Spotify... "
     choco install spotify -y
     ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Install_Spotify}.Text)",0x0)
 })
 
 ${ProgramsSetup_Install_Discord}.Add_Click({
-    Write-Output "Installing Discord... "
+   Write-Host "Installing Discord... "
     choco install discord -y
     ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Install_Discord}.Text)",0x0)
 })
 
 ${ProgramsSetup_Install_Bleachbit}.Add_Click({
-    Write-Output "Installing BleachBit... "
+   Write-Host "Installing BleachBit... "
     choco install bleachbit -y
     ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Install_Bleachbit}.Text)",0x0)
 })
 
 ${SystemReadiness_Apply}.Add_Click({
     # Privacy settings
-    Write-Output "Applying privacy settings..."
+   Write-Host "Applying privacy settings..."
     Import-Module BitsTransfer | Out-Null
     Start-BitsTransfer -Source "https://raw.githubusercontent.com/gfelipe099/threshold-srb/master/ooshutup10.cfg" -Destination ooshutup10.cfg | Out-Null
     Start-BitsTransfer -Source "https://dl5.oo-software.com/files/ooshutup10/OOSU10.exe" -Destination OOSU10.exe | Out-Null
@@ -179,7 +179,7 @@ ${SystemReadiness_Apply}.Add_Click({
     Remove-Module BitsTransfer
 
     # Performance settings
-    Write-Output "Applying performance settings..."
+   Write-Host "Applying performance settings..."
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ListviewAlphaSelect" -Type DWord -Value 0
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ListviewShadow" -Type DWord -Value 0
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAnimations" -Type DWord -Value 0
@@ -188,7 +188,7 @@ ${SystemReadiness_Apply}.Add_Click({
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\DWM" -Name "EnableAeroPeek" -Type DWord -Value 0
 
     # Interface settings
-    Write-Output "Applying interface settings..."
+   Write-Host "Applying interface settings..."
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HiddenFileExt" -Type DWord -Value 0
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\" -Name "ShowTaskBarButton" -Type DWord -Value 0
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\" -Name "ShowCortanaButton" -Type DWord -Value 0
@@ -197,7 +197,7 @@ ${SystemReadiness_Apply}.Add_Click({
     Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications" -Name "ToastEnabled" -Type DWord -Value 0
 
     # Windows optional features
-    Write-Output "Configuring Windows optional features..."
+   Write-Host "Configuring Windows optional features..."
     Disable-WindowsOptionalFeature -Online -FeatureName "WorkFolders-Client" -NoRestart -WarningAction SilentlyContinue | Out-Null
     Disable-WindowsOptionalFeature -Online -FeatureName "Printing-PrintToPDFServices-Features" -NoRestart -WarningAction SilentlyContinue | Out-Null
     Disable-WindowsOptionalFeature -Online -FeatureName "Printing-XPSServices-Features" -NoRestart -WarningAction SilentlyContinue | Out-Null
@@ -327,7 +327,7 @@ ${SystemReadiness_Apply}.Add_Click({
     Disable-WindowsOptionalFeature -Online -FeatureName "SMB1Protocol" -NoRestart -WarningAction SilentlyContinue | Out-Null
     Disable-WindowsOptionalFeature -Online -FeatureName "SMB1Protocol-Client" -NoRestart -WarningAction SilentlyContinue | Out-Null
     Disable-WindowsOptionalFeature -Online -FeatureName "SMB1Protocol-Server" -NoRestart -WarningAction SilentlyContinue | Out-Null
-    Write-Output "Please wait, still disabling some features..."
+   Write-Host "Please wait, still disabling some features..."
     DISM /Online /Remove-Capability /CapabilityName:Accessibility.Braille~~~~0.0.1.0 /NoRestart | Out-Null
     DISM /Online /Remove-Capability /CapabilityName:Analog.Holographic.Desktop~~~~0.0.1.0 /NoRestart | Out-Null
     DISM /Online /Remove-Capability /CapabilityName:App.Support.QuickAssist~~~~0.0.1.0 /NoRestart | Out-Null
