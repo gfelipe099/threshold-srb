@@ -60,50 +60,62 @@ ${ProgramsSetup}.Font                                           = New-Object Sys
 ${ProgramsSetup_Install_Chocolatey}                             = New-Object System.Windows.Forms.Button
 ${ProgramsSetup_Install_Chocolatey}.Text                        = "Install Chocolatey"
 ${ProgramsSetup_Install_Chocolatey}.AutoSize                    = $true
-${ProgramsSetup_Install_Chocolatey}.Location                    = New-Object System.Drawing.Point(30,80)
+${ProgramsSetup_Install_Chocolatey}.Location                    = New-Object System.Drawing.Point(20,80)
 ${ProgramsSetup_Install_Chocolatey}.Font                        = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
 
 ${ProgramsSetup_Install_7zip}                                   = New-Object System.Windows.Forms.Button
 ${ProgramsSetup_Install_7zip}.Text                              = "Install 7-Zip"
 ${ProgramsSetup_Install_7zip}.AutoSize                          = $true
-${ProgramsSetup_Install_7zip}.Location                          = New-Object System.Drawing.Point(30,135)
+${ProgramsSetup_Install_7zip}.Location                          = New-Object System.Drawing.Point(20,135)
 ${ProgramsSetup_Install_7zip}.Font                              = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
 
 ${ProgramsSetup_Install_Steam}                                  = New-Object System.Windows.Forms.Button
 ${ProgramsSetup_Install_Steam}.Text                             = "Install Steam"
 ${ProgramsSetup_Install_Steam}.AutoSize                         = $true
-${ProgramsSetup_Install_Steam}.Location                         = New-Object System.Drawing.Point(30,190)
+${ProgramsSetup_Install_Steam}.Location                         = New-Object System.Drawing.Point(20,190)
 ${ProgramsSetup_Install_Steam}.Font                             = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
 
 ${ProgramsSetup_Install_Rwc}                                    = New-Object System.Windows.Forms.Button
 ${ProgramsSetup_Install_Rwc}.Text                               = "Install Reddit Wallpaper Changer"
 ${ProgramsSetup_Install_Rwc}.AutoSize                           = $true
-${ProgramsSetup_Install_Rwc}.Location                           = New-Object System.Drawing.Point(30,245)
+${ProgramsSetup_Install_Rwc}.Location                           = New-Object System.Drawing.Point(20,245)
 ${ProgramsSetup_Install_Rwc}.Font                               = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
 
 ${ProgramsSetup_Install_Egl}                                    = New-Object System.Windows.Forms.Button
 ${ProgramsSetup_Install_Egl}.Text                               = "Install Epic Games Launcher"
 ${ProgramsSetup_Install_Egl}.AutoSize                           = $true
-${ProgramsSetup_Install_Egl}.Location                           = New-Object System.Drawing.Point(30,300)
+${ProgramsSetup_Install_Egl}.Location                           = New-Object System.Drawing.Point(20,300)
 ${ProgramsSetup_Install_Egl}.Font                               = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
 
 ${ProgramsSetup_Install_Spotify}                                = New-Object System.Windows.Forms.Button
 ${ProgramsSetup_Install_Spotify}.Text                           = "Install Spotify"
 ${ProgramsSetup_Install_Spotify}.AutoSize                       = $true
-${ProgramsSetup_Install_Spotify}.Location                       = New-Object System.Drawing.Point(30,355)
+${ProgramsSetup_Install_Spotify}.Location                       = New-Object System.Drawing.Point(20,355)
 ${ProgramsSetup_Install_Spotify}.Font                           = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
 
 ${ProgramsSetup_Install_Discord}                                = New-Object System.Windows.Forms.Button
 ${ProgramsSetup_Install_Discord}.Text                           = "Install Discord"
 ${ProgramsSetup_Install_Discord}.AutoSize                       = $true
-${ProgramsSetup_Install_Discord}.Location                       = New-Object System.Drawing.Point(30,410)
+${ProgramsSetup_Install_Discord}.Location                       = New-Object System.Drawing.Point(20,410)
 ${ProgramsSetup_Install_Discord}.Font                           = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
 
 ${ProgramsSetup_Install_Bleachbit}                              = New-Object System.Windows.Forms.Button
 ${ProgramsSetup_Install_Bleachbit}.Text                         = "Install BleachBit"
 ${ProgramsSetup_Install_Bleachbit}.AutoSize                     = $true
-${ProgramsSetup_Install_Bleachbit}.Location                     = New-Object System.Drawing.Point(30,465)
+${ProgramsSetup_Install_Bleachbit}.Location                     = New-Object System.Drawing.Point(20,465)
 ${ProgramsSetup_Install_Bleachbit}.Font                         = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
+
+${ProgramsSetup_Uninstall_Chocolatey}                           = New-Object System.Windows.Forms.Button
+${ProgramsSetup_Uninstall_Chocolatey}.Text                      = "Uninstall Chocolatey"
+${ProgramsSetup_Uninstall_Chocolatey}.AutoSize                  = $true
+${ProgramsSetup_Uninstall_Chocolatey}.Location                  = New-Object System.Drawing.Point(20,520)
+${ProgramsSetup_Uninstall_Chocolatey}.Font                      = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
+
+${ProgramsSetup_CheckForUpdates_Chocolatey}                     = New-Object System.Windows.Forms.Button
+${ProgramsSetup_CheckForUpdates_Chocolatey}.Text                = "Upgrade Chocolatey packages"
+${ProgramsSetup_CheckForUpdates_Chocolatey}.AutoSize            = $true
+${ProgramsSetup_CheckForUpdates_Chocolatey}.Location            = New-Object System.Drawing.Point(20,575)
+${ProgramsSetup_CheckForUpdates_Chocolatey}.Font                = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
 
 ${SystemAdministration}                                         = New-Object System.Windows.Forms.Panel
 ${SystemAdministration}.AutoSize                                = $true
@@ -111,14 +123,29 @@ ${SystemAdministration}.AutoSize                                = $true
 ${SystemReadiness}                                              = New-Object System.Windows.Forms.Label
 ${SystemReadiness}.Text                                         = "System Administration"
 ${SystemReadiness}.AutoSize                                     = $true
-${SystemReadiness}.Location                                     = New-Object System.Drawing.Point(550,15)
+${SystemReadiness}.Location                                     = New-Object System.Drawing.Point(560,15)
 ${SystemReadiness}.Font                                         = New-Object System.Drawing.Font('Microsoft Sans Serif',30)
 
 ${SystemReadiness_Apply}                                        = New-Object System.Windows.Forms.Button
 ${SystemReadiness_Apply}.Text                                   = "Apply System Readiness"
 ${SystemReadiness_Apply}.AutoSize                               = $true
-${SystemReadiness_Apply}.Location                               = New-Object System.Drawing.Point(580,80)
+${SystemReadiness_Apply}.Location                               = New-Object System.Drawing.Point(570,80)
 ${SystemReadiness_Apply}.Font                                   = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
+
+${ThirdpartyContainer}                                            = New-Object System.Windows.Forms.Panel
+${ThirdpartyContainer}.AutoSize                                   = $true
+
+${ThirdpartyContainer_Label}                                      = New-Object System.Windows.Forms.Label
+${ThirdpartyContainer_Label}.Text                                 = "Third-party Scripts"
+${ThirdpartyContainer_Label}.AutoSize                             = $true
+${ThirdpartyContainer_Label}.Location                             = New-Object System.Drawing.Point(560,465)
+${ThirdpartyContainer_Label}.Font                                 = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
+
+${ThirdpartyContainer_CttWin10script}                             = New-Object System.Windows.Forms.Button
+${ThirdpartyContainer_CttWin10script}.Text                        = "Launch CTT's win10script"
+${ThirdpartyContainer_CttWin10script}.AutoSize                    = $true
+${ThirdpartyContainer_CttWin10script}.Location                    = New-Object System.Drawing.Point(570,520)
+${ThirdpartyContainer_CttWin10script}.Font                        = New-Object System.Drawing.Font('Microsoft Sans Serif',20)
 
 ${ProgramsSetup_Install_Chocolatey}.Add_Click({
     Write-Host "Installing Chocolatey package manager for Windows... "
@@ -134,44 +161,161 @@ ${ProgramsSetup_Install_7Zip}.Add_Click({
 })
 
 ${ProgramsSetup_Install_Steam}.Add_Click({
-   Write-Host "Installing Steam... "
+    Write-Host "Installing Steam... "
     choco install steam -y
     ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Install_Steam}.Text)",0x0)
 })
 
 ${ProgramsSetup_Install_Rwc}.Add_Click({
-   Write-Host "Installing Reddit Wallpaper Changer... "
+    Write-Host "Installing Reddit Wallpaper Changer... "
     choco install reddit-wallpaper-changer -y
     ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Install_Rwc}.Text)",0x0)
 })
 
 ${ProgramsSetup_Install_Egl}.Add_Click({
-   Write-Host "Installing Epic Games Launcher... "
-    choco install reddit-wallpaper-changer -y
+    Write-Host "Installing Epic Games Launcher... "
+    choco install epicgameslauncher -y
     ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Install_Egl}.Text)",0x0)
 })
 
 ${ProgramsSetup_Install_Spotify}.Add_Click({
-   Write-Host "Installing Spotify... "
+    Write-Host "Installing Spotify... "
     choco install spotify -y
     ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Install_Spotify}.Text)",0x0)
 })
 
 ${ProgramsSetup_Install_Discord}.Add_Click({
-   Write-Host "Installing Discord... "
-    choco install discord -y
+    Write-Host "Installing Discord... "
+    choco install discord.install -y
     ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Install_Discord}.Text)",0x0)
+    Write-Host "Operation completed"
 })
 
 ${ProgramsSetup_Install_Bleachbit}.Add_Click({
-   Write-Host "Installing BleachBit... "
-    choco install bleachbit -y
+    Write-Host "Installing BleachBit... "
+    choco install bleachbit.install -y
     ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Install_Bleachbit}.Text)",0x0)
+    Write-Host "Operation completed"
+})
+
+${ProgramsSetup_Uninstall_Chocolatey}.Add_Click({
+
+    Write-Warning "Chocolatey will uninstalled within 10 seconds..."
+    Start-Sleep 5
+    
+    $VerbosePreference = 'Continue'
+if (-not $env:ChocolateyInstall) {
+    $message = @(
+        "The ChocolateyInstall environment variable was not found."
+        "Chocolatey is not detected as installed. Nothing to do."
+    ) -join "`n"
+
+    Write-Warning $message
+    return
+}
+
+if (-not (Test-Path $env:ChocolateyInstall)) {
+    $message = @(
+        "No Chocolatey installation detected at '$env:ChocolateyInstall'."
+        "Nothing to do."
+    ) -join "`n"
+
+    Write-Warning $message
+    return
+}
+
+<#
+    Using the .NET registry calls is necessary here in order to preserve environment variables embedded in PATH values;
+    Powershell's registry provider doesn't provide a method of preserving variable references, and we don't want to
+    accidentally overwrite them with absolute path values. Where the registry allows us to see "%SystemRoot%" in a PATH
+    entry, PowerShell's registry provider only sees "C:\Windows", for example.
+#>
+$userKey = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment')
+$userPath = $userKey.GetValue('PATH', [string]::Empty, 'DoNotExpandEnvironmentNames').ToString()
+
+$machineKey = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey('SYSTEM\ControlSet001\Control\Session Manager\Environment\')
+$machinePath = $machineKey.GetValue('PATH', [string]::Empty, 'DoNotExpandEnvironmentNames').ToString()
+
+$backupPATHs = @(
+    "User PATH: $userPath"
+    "Machine PATH: $machinePath"
+)
+$backupFile = "C:\PATH_backups_ChocolateyUninstall.txt"
+$backupPATHs | Set-Content -Path $backupFile -Encoding UTF8 -Force
+
+$warningMessage = @"
+    This could cause issues after reboot where nothing is found if something goes wrong.
+    In that case, look at the backup file for the original PATH values in '$backupFile'.
+"@
+
+if ($userPath -like "*$env:ChocolateyInstall*") {
+    Write-Verbose "Chocolatey Install location found in User Path. Removing..."
+    Write-Warning $warningMessage
+
+    $newUserPATH = @(
+        $userPath -split [System.IO.Path]::PathSeparator |
+            Where-Object { $_ -and $_ -ne "$env:ChocolateyInstall\bin" }
+    ) -join [System.IO.Path]::PathSeparator
+
+    # NEVER use [Environment]::SetEnvironmentVariable() for PATH values; see https://github.com/dotnet/corefx/issues/36449
+    # This issue exists in ALL released versions of .NET and .NET Core as of 12/19/2019
+    $userKey.SetValue('PATH', $newUserPATH, 'ExpandString')
+}
+
+if ($machinePath -like "*$env:ChocolateyInstall*") {
+    Write-Verbose "Chocolatey Install location found in Machine Path. Removing..."
+    Write-Warning $warningMessage
+
+    $newMachinePATH = @(
+        $machinePath -split [System.IO.Path]::PathSeparator |
+            Where-Object { $_ -and $_ -ne "$env:ChocolateyInstall\bin" }
+    ) -join [System.IO.Path]::PathSeparator
+
+    # NEVER use [Environment]::SetEnvironmentVariable() for PATH values; see https://github.com/dotnet/corefx/issues/36449
+    # This issue exists in ALL released versions of .NET and .NET Core as of 12/19/2019
+    $machineKey.SetValue('PATH', $newMachinePATH, 'ExpandString')
+}
+
+# Adapt for any services running in subfolders of ChocolateyInstall
+$agentService = Get-Service -Name chocolatey-agent -ErrorAction SilentlyContinue
+if ($agentService -and $agentService.Status -eq 'Running') {
+    $agentService.Stop()
+}
+# TODO: add other services here
+
+Remove-Item -Path $env:ChocolateyInstall -Recurse -Force
+
+'ChocolateyInstall', 'ChocolateyLastPathUpdate' | ForEach-Object {
+    foreach ($scope in 'User', 'Machine') {
+        [Environment]::SetEnvironmentVariable($_, [string]::Empty, $scope)
+    }
+}
+
+$machineKey.Close()
+$userKey.Close()
+
+if ($env:ChocolateyToolsLocation -and (Test-Path $env:ChocolateyToolsLocation)) {
+    Remove-Item -Path $env:ChocolateyToolsLocation -WhatIf -Recurse -Force
+}
+
+foreach ($scope in 'User', 'Machine') {
+    [Environment]::SetEnvironmentVariable('ChocolateyToolsLocation', [string]::Empty, $scope)
+}
+    ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_Uninstall_Chocolatey}.Text)",0x0)
+    Write-Host "Operation completed"
+})
+
+${ProgramsSetup_CheckForUpdates_Chocolatey}.Add_Click({
+    Write-Warning "If Chocolatey is installed, packages installed within the repository will be upgraded..."
+    Start-Sleep 5
+    choco upgrade all -y
+    ${WShell}.Popup("Operation completed",0,"$(${ProgramsSetup_CheckForUpdates_Chocolatey}.Text)",0x0)
+    Write-Host "Operation completed"
 })
 
 ${SystemReadiness_Apply}.Add_Click({
     # Privacy settings
-   Write-Host "Applying privacy settings..."
+    Write-Host "Applying privacy settings..."
     Import-Module BitsTransfer | Out-Null
     Start-BitsTransfer -Source "https://raw.githubusercontent.com/gfelipe099/threshold-srb/master/ooshutup10.cfg" -Destination ooshutup10.cfg | Out-Null
     Start-BitsTransfer -Source "https://dl5.oo-software.com/files/ooshutup10/OOSU10.exe" -Destination OOSU10.exe | Out-Null
@@ -179,7 +323,7 @@ ${SystemReadiness_Apply}.Add_Click({
     Remove-Module BitsTransfer
 
     # Performance settings
-   Write-Host "Applying performance settings..."
+    Write-Host "Applying performance settings..."
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ListviewAlphaSelect" -Type DWord -Value 0
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ListviewShadow" -Type DWord -Value 0
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAnimations" -Type DWord -Value 0
@@ -188,7 +332,7 @@ ${SystemReadiness_Apply}.Add_Click({
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\DWM" -Name "EnableAeroPeek" -Type DWord -Value 0
 
     # Interface settings
-   Write-Host "Applying interface settings..."
+    Write-Host "Applying interface settings..."
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HiddenFileExt" -Type DWord -Value 0
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\" -Name "ShowTaskBarButton" -Type DWord -Value 0
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\" -Name "ShowCortanaButton" -Type DWord -Value 0
@@ -197,7 +341,7 @@ ${SystemReadiness_Apply}.Add_Click({
     Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications" -Name "ToastEnabled" -Type DWord -Value 0
 
     # Windows optional features
-   Write-Host "Configuring Windows optional features..."
+    Write-Host "Configuring Windows optional features..."
     Disable-WindowsOptionalFeature -Online -FeatureName "WorkFolders-Client" -NoRestart -WarningAction SilentlyContinue | Out-Null
     Disable-WindowsOptionalFeature -Online -FeatureName "Printing-PrintToPDFServices-Features" -NoRestart -WarningAction SilentlyContinue | Out-Null
     Disable-WindowsOptionalFeature -Online -FeatureName "Printing-XPSServices-Features" -NoRestart -WarningAction SilentlyContinue | Out-Null
@@ -327,7 +471,7 @@ ${SystemReadiness_Apply}.Add_Click({
     Disable-WindowsOptionalFeature -Online -FeatureName "SMB1Protocol" -NoRestart -WarningAction SilentlyContinue | Out-Null
     Disable-WindowsOptionalFeature -Online -FeatureName "SMB1Protocol-Client" -NoRestart -WarningAction SilentlyContinue | Out-Null
     Disable-WindowsOptionalFeature -Online -FeatureName "SMB1Protocol-Server" -NoRestart -WarningAction SilentlyContinue | Out-Null
-   Write-Host "Please wait, still disabling some features..."
+    Write-Host "Please wait, still disabling some features..."
     DISM /Online /Remove-Capability /CapabilityName:Accessibility.Braille~~~~0.0.1.0 /NoRestart | Out-Null
     DISM /Online /Remove-Capability /CapabilityName:Analog.Holographic.Desktop~~~~0.0.1.0 /NoRestart | Out-Null
     DISM /Online /Remove-Capability /CapabilityName:App.Support.QuickAssist~~~~0.0.1.0 /NoRestart | Out-Null
@@ -652,11 +796,18 @@ ${SystemReadiness_Apply}.Add_Click({
     DISM /Online /Remove-Capability /CapabilityName:WMI-SNMP-Provider.Client~~~~0.0.1.0 /NoRestart | Out-Null
     DISM /Online /Remove-Capability /CapabilityName:XPS.Viewer~~~~0.0.1.0 /NoRestart | Out-Null
     Remove-Printer -Name "Fax" -ErrorAction SilentlyContinue | Out-Null
+    ${WShell}.Popup("Operation completed",0,"$(${SystemReadiness_Apply}.Text)",0x0)
 })
 
-${threshold-srb}.Controls.AddRange(@(${ProgramsContainer},${SystemAdministration}))
-${ProgramsContainer}.Controls.AddRange(@(${ProgramsSetup},${ProgramsSetup_Install_Chocolatey},${ProgramsSetup_Install_7zip},${ProgramsSetup_Install_Steam},${ProgramsSetup_Install_Origin},${ProgramsSetup_Install_Rwc},${ProgramsSetup_Install_Egl},${ProgramsSetup_Install_Spotify},${ProgramsSetup_Install_Discord},${ProgramsSetup_Install_Bleachbit},${SystemReadiness_Apply}))
+${ThirdpartyContainer_CttWin10script}.Add_Click({
+    Write-Host "Downloading and executing ChristTitusTech's win10script..."
+    iex ((New-Object System.Net.WebClient).DownloadString('https://git.io/JJ8R4'))
+})
+
+${threshold-srb}.Controls.AddRange(@(${ProgramsContainer},${SystemAdministration},${ThirdpartyContainer}))
+${ProgramsContainer}.Controls.AddRange(@(${ProgramsSetup},${ProgramsSetup_Install_Chocolatey},${ProgramsSetup_Install_7zip},${ProgramsSetup_Install_Steam},${ProgramsSetup_Install_Origin},${ProgramsSetup_Install_Rwc},${ProgramsSetup_Install_Egl},${ProgramsSetup_Install_Spotify},${ProgramsSetup_Install_Discord},${ProgramsSetup_Install_Bleachbit},${SystemReadiness_Apply},${ProgramsSetup_Uninstall_Chocolatey},${ProgramsSetup_CheckForUpdates_Chocolatey}))
 ${SystemAdministration}.Controls.AddRange(@(${SystemReadiness},${SystemReadiness_Apply}))
+${ThirdpartyContainer}.Controls.AddRange(@(${ThirdpartyContainer_Label},${ThirdpartyContainer_CttWin10script}))
 
 if (${OsEdition} -ne "${validatedOsEdition}") {
     ${WShell}.Popup("The OS edition you are using is not validated to use with this script. You need to use ${validatedOsEdition}, and you are using: ${OsEdition}.",0,"$(${threshold-srb}.Text)",0x0)
