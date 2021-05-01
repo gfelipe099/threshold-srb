@@ -28,17 +28,15 @@ ${WShell} = New-Object -ComObject Wscript.Shell
 Add-Type -AssemblyName System.Windows.Forms
 [System.Windows.Forms.Application]::EnableVisualStyles()
     If (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]'Administrator')) {
-        Switch ([System.Windows.MessageBox]::Show("This script needs Administrator privileges to run. Do you want to give permissions to this script?", "Insufficient permissions", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)) {
+        Switch ([System.Windows.Forms.MessageBox]::Show("This script needs Administrator privileges to run. Do you want to give permissions to this script?", "Insufficient permissions", [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Warning)) {
         Yes {
             Start-Process PowerShell.exe -ArgumentList ("-NoProfile -ExecutionPolicy Bypass -File `"{0}`"" -f $PSCommandPath) -Verb RunAs
             Exit
         }
         No {
-            Switch ([System.Windows.MessageBox]::Show("This script cannot be executed without Administrator privileges.", "threshold-srb", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)) {
-            OK {
+                Write-Error "This script needs Administrator privileges to work, try again."
+                Start-Sleep 5
                 Exit
-            }
-            }
         }
     }
 }
